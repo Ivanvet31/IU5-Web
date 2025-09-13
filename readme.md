@@ -15,7 +15,7 @@
 
 * [Методические указания](https://github.com/iu5git/Web/blob/main/tutorials/lab1-design/README.md) по верстке и дизайну Figma [arabic Figma](/tutorials/lab1-design/arabic.md). [Видеоуроки](https://www.youtube.com/watch?v=DWicd2qo2pk) по Figma
 * [Инструкция по работе c Python](https://github.com/iu5git/Web/blob/main/tutorials/python/python.md)
-* [Методические указания Django](https://github.com/iu5git/Web/blob/main/tutorials/lab1-py/lab1_tutorial.md) / [arabic Django](/tutorials/lab1-py/arabic.md)
+* [Методические указания Django](https://github.com/iu5git/Web/blob/main/tutorials/lab1-py/lab1_tutorial.md) / [arabic Django](https://github.com/iu5git/Web/blob/main/tutorials/lab1-py/arabic.md)
 * [Методические указания Golang](/https://github.com/iu5git/Web/blob/main/tutorials/lab1-go/README.md)
 * [Установка и администрирование Minio](https://github.com/iu5git/Networking/tree/main/S3)
 
