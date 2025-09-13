@@ -1,0 +1,8 @@
+{
+    "CORSConfiguration": [
+        {
+            "AllowedOrigins": ["*"],
+            "AllowedMethods": ["GET"]
+        }
+    ]
+}
