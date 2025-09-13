@@ -2,10 +2,9 @@ package repository
 
 import (
 	"fmt"
-	"strings" // Импортируем пакет для работы со строками
+	"strings"
 )
 
-// Структура Strategy остается без изменений
 type Strategy struct {
 	ID          int
 	Title       string
@@ -17,7 +16,6 @@ type Repository struct {
 	strategies []Strategy
 }
 
-// NewRepository остается без изменений
 func NewRepository() *Repository {
 	minioBaseURL := "http://localhost:9000/recovery-images"
 	strategies := []Strategy{
@@ -55,7 +53,6 @@ func NewRepository() *Repository {
 	return &Repository{strategies: strategies}
 }
 
-// GetStrategies ТЕПЕРЬ ПРИНИМАЕТ ПОИСКОВЫЙ ЗАПРОС
 func (r *Repository) GetStrategies(query string) ([]Strategy, error) {
 	// Если строка поиска пустая, возвращаем все стратегии
 	if query == "" {
@@ -75,7 +72,6 @@ func (r *Repository) GetStrategies(query string) ([]Strategy, error) {
 	return filteredStrategies, nil
 }
 
-// GetStrategyByID остается без изменений
 func (r *Repository) GetStrategyByID(id int) (Strategy, error) {
 	for _, s := range r.strategies {
 		if s.ID == id {

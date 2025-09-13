@@ -1,7 +1,7 @@
 package main
 
 import (
-	"lab1/internal/api" // Изменили импорт на более корректный
+	"lab1/internal/api"
 	"log"
 )
 

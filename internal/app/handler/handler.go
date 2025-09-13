@@ -19,7 +19,6 @@ func NewHandler(r *repository.Repository) *Handler {
 	}
 }
 
-// ShowIndexPage ТЕПЕРЬ ОБРАБАТЫВАЕТ ПОИСК
 func (h *Handler) ShowIndexPage(ctx *gin.Context) {
 	// Получаем значение параметра "query" из URL. Если его нет, будет пустая строка.
 	searchQuery := ctx.Query("query")
@@ -35,11 +34,10 @@ func (h *Handler) ShowIndexPage(ctx *gin.Context) {
 	// Передаем в шаблон не только стратегии, но и сам поисковый запрос
 	ctx.HTML(http.StatusOK, "index.html", gin.H{
 		"strategies":  strategies,
-		"searchQuery": searchQuery, // Это нужно для сохранения текста в поле поиска
+		"searchQuery": searchQuery,
 	})
 }
 
-// ShowStrategyPage остается без изменений
 func (h *Handler) ShowStrategyPage(ctx *gin.Context) {
 	idStr := ctx.Param("id")
 	id, err := strconv.Atoi(idStr)
@@ -61,7 +59,6 @@ func (h *Handler) ShowStrategyPage(ctx *gin.Context) {
 	})
 }
 
-// ShowCalculatorPage остается без изменений
 func (h *Handler) ShowCalculatorPage(ctx *gin.Context) {
 	ctx.HTML(http.StatusOK, "result_page.html", nil)
 }
