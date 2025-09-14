@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 ## Лабораторная работа №2
 
 - **Цель работы**: разработка структуры базы данных и ее подключение к бэкенду 
@@ -47,5 +46,4 @@
 * [Методические указания Django](https://github.com/iu5git/Web/blob/main/tutorials/lab1-py/lab1_tutorial.md) / [arabic Django](https://github.com/iu5git/Web/blob/main/tutorials/lab1-py/arabic.md)
 * [Методические указания Golang](/https://github.com/iu5git/Web/blob/main/tutorials/lab1-go/README.md)
 * [Установка и администрирование Minio](https://github.com/iu5git/Networking/tree/main/S3)
->>>>>>> basic-interface
 
