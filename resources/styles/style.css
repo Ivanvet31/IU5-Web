@@ -190,30 +190,30 @@ body {
 
 .calculator-link {
     position: fixed;
-    bottom: 40px;
-    left: 40px;
-    width: 80px;
-    height: 80px;
+    top: 12px; 
+    right: 40px;
+    width: 60px;
+    height: 60px;
     background-color: #FFFFFF;
-    border: 3px solid #E53935;
+    border: 2px solid #E53935;
     border-radius: 50%;
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
     display: flex;
     justify-content: center;
     align-items: center;
-    cursor: pointer;
-    transition: transform 0.2s ease-in-out;
-    z-index: 1000;
+    text-decoration: none;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .calculator-link:hover {
-    transform: scale(1.1);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
 }
 
 .calculator-icon {
     position: relative;
-    width: 40px;
-    height: 40px;
+    width: 30px;
+    height: 30px;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -222,11 +222,12 @@ body {
 
 .icon-layer {
     display: block;
-    width: 32px;
+    width: 24px; 
     height: 2px;
     background-color: #333;
     border: 1px solid #333;
-    margin-bottom: 5px;
+    border-radius: 2px;
+    margin: 2px 0;
 }
 
 .icon-layer:last-child {
@@ -236,16 +237,16 @@ body {
 .calculator-badge {
     position: absolute;
     top: -5px;
-    right: -5px;
-    width: 28px;
-    height: 28px;
+    right: -8px;  
+    width: 24px;  
+    height: 24px; 
     background-color: #E53935;
     color: #FFFFFF;
     border-radius: 50%;
     display: flex;
     justify-content: center;
     align-items: center;
-    font-size: 16px;
+    font-size: 14px; 
     font-weight: bold;
     border: 2px solid #FFFFFF;
 }
