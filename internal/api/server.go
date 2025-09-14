@@ -1,8 +1,10 @@
+// internal/api/server.go
 package api
 
 import (
 	"lab1/internal/app/handler"
 	"lab1/internal/app/repository"
+	"lab1/internal/pkg/database" // Импортируем наш пакет для работы с БД
 	"log"
 
 	"github.com/gin-gonic/gin"
@@ -11,24 +13,30 @@ import (
 func StartServer() error {
 	log.Println("Server starting...")
 
-	// Инициализация зависимостей
-	repo := repository.NewRepository()
+	// 1. Подключаемся к базе данных
+	db, err := database.ConnectDB()
+	if err != nil {
+		return err // Если не удалось подключиться, приложение не должно запускаться
+	}
+
+	// 2. Инициализация зависимостей с реальным подключением к БД
+	repo := repository.NewRepository(db)
 	h := handler.NewHandler(repo)
 
-	// Настройка роутера Gin
+	// 3. Настройка роутера Gin
 	r := gin.Default()
-
-	// Указываем, где лежат HTML-шаблоны
 	r.LoadHTMLGlob("templates/*")
-
-	// Указываем, где лежат статические файлы (CSS, изображения)
 	r.Static("/resources", "./resources")
 
-	// Определяем маршруты (роуты)
+	// 4. Определяем маршруты (роуты)
 	r.GET("/", h.ShowIndexPage)
-	r.GET("/strategy/:id", h.ShowStrategyPage) // Динамический роут для детальной страницы
+	r.GET("/strategy/:id", h.ShowStrategyPage)
 	r.GET("/calculator", h.ShowCalculatorPage)
 
-	// Запуск сервера
-	return r.Run() // listen and serve on 0.0.0.0:8080
+	// --- НОВЫЕ РОУТЫ ДЛЯ ЛАБОРАТОРНОЙ №2 ---
+	r.POST("/cart/add/:id", h.AddStrategyToCart) // Роут для добавления в корзину
+
+	// 5. Запуск сервера
+	log.Println("Server is up and running on port 8080")
+	return r.Run()
 }
