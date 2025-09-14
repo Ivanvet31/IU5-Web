@@ -29,7 +29,7 @@
         <div class="container">
             <div class="content-card">
                 <h2>Содержимое заявки</h2>
-                {{if .cart}}
+                {{if and .cart .cart.ID}}
                     <p><strong>ID Заявки:</strong> {{.cart.ID}} | <strong>Статус:</strong> {{.cart.Status}}</p>
                     
                     <hr>
@@ -54,7 +54,7 @@
                         <button type="submit" class="delete-button">Удалить заявку</button>
                     </form>
                 {{else}}
-                    <p>Ваша корзина пуста или была удалена.</p>
+                    <p>У вас нет активной заявки (корзины).</p>
                 {{end}}
             </div>
         </div>
