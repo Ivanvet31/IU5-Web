@@ -1,8 +1,7 @@
-// internal/app/repository/repository.go
 package repository
 
 import (
-	"lab1/internal/app" // Импортируем наши модели
+	"lab1/internal/app/models" // Используем новый пакет models
 
 	"gorm.io/gorm"
 )
@@ -18,9 +17,8 @@ func NewRepository(db *gorm.DB) *Repository {
 }
 
 // GetStrategies теперь выполняет запрос к БД через GORM
-func (r *Repository) GetStrategies(query string) ([]app.Strategy, error) {
-	var strategies []app.Strategy
-	// Строим запрос. ILIKE - это регистронезависимый поиск в PostgreSQL
+func (r *Repository) GetStrategies(query string) ([]models.Strategy, error) {
+	var strategies []models.Strategy
 	tx := r.db.Where("status = ?", "active")
 	if query != "" {
 		tx = tx.Where("title ILIKE ?", "%"+query+"%")
@@ -30,45 +28,36 @@ func (r *Repository) GetStrategies(query string) ([]app.Strategy, error) {
 }
 
 // GetStrategyByID ищет одну запись в БД
-func (r *Repository) GetStrategyByID(id uint) (app.Strategy, error) {
-	var strategy app.Strategy
+func (r *Repository) GetStrategyByID(id uint) (models.Strategy, error) {
+	var strategy models.Strategy
 	err := r.db.First(&strategy, id).Error
 	return strategy, err
 }
 
-// --- НОВЫЕ МЕТОДЫ ДЛЯ РАБОТЫ С ЗАЯВКАМИ (КОРЗИНОЙ) ---
+// --- НОВЫЕ МЕТОДЫ ДЛЯ РАБОТЫ С ЗАЯВКАМИ ---
 
-// GetOrCreateDraftRequest находит или создает черновик заявки для пользователя
-func (r *Repository) GetOrCreateDraftRequest(userID uint) (app.Request, error) {
-	var request app.Request
-	// Ищем заявку со статусом 'draft' для данного пользователя.
-	// Если не найдена - создаем новую.
-	err := r.db.Where(app.Request{UserID: userID, Status: "draft"}).FirstOrCreate(&request).Error
+func (r *Repository) GetOrCreateDraftRequest(userID uint) (models.Request, error) {
+	var request models.Request
+	err := r.db.Where(models.Request{UserID: userID, Status: "draft"}).FirstOrCreate(&request).Error
 	return request, err
 }
 
-// AddStrategyToRequest добавляет стратегию в заявку
 func (r *Repository) AddStrategyToRequest(requestID, strategyID uint, dataGB int) error {
-	association := app.RequestStrategy{
+	association := models.RequestStrategy{
 		RequestID:       requestID,
 		StrategyID:      strategyID,
-		DataToRecoverGB: dataGB, // Используем данные для расчета
+		DataToRecoverGB: dataGB,
 	}
-	// GORM обработает конфликт составного первичного ключа и не даст добавить дубликат
 	return r.db.Create(&association).Error
 }
 
-// LogicallyDeleteRequest выполняет ЧИСТЫЙ SQL-ЗАПРОС, как требует задание
-func (r *Repository) LogicallyDeleteRequest(requestID uint) error {
-	// Используем db.Exec для выполнения сырого SQL
-	result := r.db.Exec("UPDATE requests SET status = ? WHERE id = ?", "deleted", requestID)
-	return result.Error
-}
-
-// GetRequestWithStrategies загружает заявку и связанные с ней стратегии
-func (r *Repository) GetRequestWithStrategies(requestID uint) (app.Request, error) {
-	var request app.Request
-	// Используем Preload для автоматической загрузки связанных данных (JOIN)
+func (r *Repository) GetRequestWithStrategies(requestID uint) (models.Request, error) {
+	var request models.Request
 	err := r.db.Preload("Strategies").First(&request, requestID).Error
 	return request, err
+}
+
+func (r *Repository) LogicallyDeleteRequest(requestID uint) error {
+	result := r.db.Exec("UPDATE requests SET status = ? WHERE id = ?", "deleted", requestID)
+	return result.Error
 }

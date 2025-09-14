@@ -1,5 +1,5 @@
-// internal/app/models.go
-package app
+// internal/app/models/models.go
+package models
 
 import "time"
 
@@ -15,9 +15,9 @@ type User struct {
 
 // Strategy соответствует таблице 'strategies'
 type Strategy struct {
-	ID                uint   `gorm:"primaryKey"`
-	Title             string `gorm:"size:255;not null"`
-	Description       string
+	ID                uint    `gorm:"primaryKey"`
+	Title             string  `gorm:"size:255;not null"`
+	Description       string  `gorm:"type:text"`
 	ImageURL          *string `gorm:"size:2048"` // Указатель *string делает поле nullable
 	Status            string  `gorm:"size:50;not null;default:'active'"`
 	BaseRecoveryHours float64
@@ -38,10 +38,10 @@ type Request struct {
 	NetworkBandwidthMbps        *int
 	DocumentationQuality        *string `gorm:"size:50"`
 	CalculatedRecoveryTimeHours *float64
-	Strategies                  []*Strategy `gorm:"many2many:request_strategies;"` // Связь многие-ко-многим
+	Strategies                  []Strategy `gorm:"many2many:request_strategies;"` // Связь многие-ко-многим
 }
 
-// RequestStrategy соответствует таблице 'request_strategies'
+// RequestStrategy соответствует связующей таблице 'request_strategies'
 type RequestStrategy struct {
 	RequestID       uint `gorm:"primaryKey"`
 	StrategyID      uint `gorm:"primaryKey"`
