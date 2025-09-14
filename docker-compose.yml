@@ -5,8 +5,8 @@ services:
     image: minio/minio:latest
     container_name: lab1-minio
     ports:
-      - "9000:9000" # API
-      - "9001:9001" # Web UI
+      - "9000:9000" # API для доступа к файлам
+      - "9001:9001" # Веб-интерфейс MinIO
     environment:
       - MINIO_ROOT_USER=minioadmin
       - MINIO_ROOT_PASSWORD=minioadmin
@@ -14,5 +14,27 @@ services:
       - minio_data:/data
     command: server /data --console-address ":9001"
 
+  # --- НОВЫЙ СЕРВИС: БАЗА ДАННЫХ POSTGRESQL ---
+  postgres:
+    image: postgres:14-alpine
+    container_name: lab2-postgres
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: recovery_db
+    ports:
+      - "5432:5432" # Стандартный порт PostgreSQL
+    volumes:
+      - postgres_data:/var/lib/postgresql/data # Сохраняем данные БД
+
+  # --- НОВЫЙ СЕРВИС: ВЕБ-ИНТЕРФЕЙС ДЛЯ УПРАВЛЕНИЯ БД ---
+  adminer:
+    image: adminer
+    container_name: lab2-adminer
+    ports:
+      - "8081:8080" # Внешний порт 8081, чтобы не конфликтовать с Go-приложением на 8080
+
+# Раздел для управления постоянными хранилищами
 volumes:
   minio_data:
+  postgres_data:
