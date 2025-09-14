@@ -10,6 +10,15 @@
     <header class="header">
         <div class="container">
             <a href="/" class="logo">REcovery<span class="logo--accent">Time</span></a>
+            <a href="/cart" class="calculator-link" title="Перейти к заявке">
+                <div class="calculator-icon">
+                    <span class="icon-layer"></span>
+                    <span class="icon-layer"></span>
+                    <span class="icon-layer"></span>
+                </div>
+                <!-- Здесь счетчик можно сделать статичным или передавать данные -->
+                <span class="calculator-badge">!</span> 
+            </a>
         </div>
     </header>
 
@@ -20,9 +29,15 @@
                     <h2>{{.strategy.Title}}</h2>
                     <div class="details-content">
                         <img src="{{.strategy.ImageURL}}" alt="{{.strategy.Title}}" class="details-content__image">
-                        <p class="details-content__text">
-                            {{.strategy.Description}}
-                        </p>
+                        <div class="details-text-block">
+                            <p class="details-content__text">
+                                {{.strategy.Description}}
+                            </p>
+                            <!-- Форма для добавления в заявку -->
+                            <form action="/cart/add/{{.strategy.ID}}" method="POST" class="add-to-cart-form">
+                                <button type="submit">Добавить в заявку</button>
+                            </form>
+                        </div>
                     </div>
                 </section>
             </div>

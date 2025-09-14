@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RecoveryTime - Текущая заявка</title>
+    <link rel="stylesheet" href="/resources/styles/style.css">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <a href="/" class="logo">REcovery<span class="logo--accent">Time</span></a>
+            <a href="/cart" class="calculator-link" title="Перейти к заявке">
+                <div class="calculator-icon">
+                    <span class="icon-layer"></span>
+                    <span class="icon-layer"></span>
+                    <span class="icon-layer"></span>
+                </div>
+                {{if .cart}}
+                    <span class="calculator-badge">{{len .cart.Strategies}}</span>
+                {{else}}
+                    <span class="calculator-badge">0</span>
+                {{end}}
+            </a>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="container">
+            <div class="content-card">
+                <h2>Содержимое заявки</h2>
+                {{if .cart}}
+                    <p><strong>ID Заявки:</strong> {{.cart.ID}} | <strong>Статус:</strong> {{.cart.Status}}</p>
+                    
+                    <hr>
+
+                    {{if .cart.Strategies}}
+                        {{range .cart.Strategies}}
+                        <div class="strategy-block">
+                            <div class="strategy-info">
+                                <img src="{{.ImageURL}}" alt="{{.Title}}">
+                                <div class="strategy-title-group">
+                                    <h4>{{.Title}}</h4>
+                                </div>
+                            </div>
+                        </div>
+                        {{end}}
+                    {{else}}
+                        <p>В заявке пока нет ни одной стратегии.</p>
+                    {{end}}
+
+                    <!-- Форма для логического удаления заявки -->
+                    <form action="/cart/delete/{{.cart.ID}}" method="POST" class="delete-form">
+                        <button type="submit" class="delete-button">Удалить заявку</button>
+                    </form>
+                {{else}}
+                    <p>Ваша корзина пуста или была удалена.</p>
+                {{end}}
+            </div>
+        </div>
+    </main>
+</body>
+</html>

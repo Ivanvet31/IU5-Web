@@ -10,39 +10,47 @@
     <header class="header">
         <div class="container">
             <a href="/" class="logo">REcovery<span class="logo--accent">Time</span></a>
+            <a href="/cart" class="calculator-link" title="Перейти к заявке">
+                <div class="calculator-icon">
+                    <span class="icon-layer"></span>
+                    <span class="icon-layer"></span>
+                    <span class="icon-layer"></span>
+                </div>
+                <!-- Динамический счетчик -->
+                <span class="calculator-badge">{{len .cart.Strategies}}</span>
+            </a>
         </div>
     </header>
 
     <main class="main">
         <div class="container">
+            <!-- Карточка текущей заявки (корзины) -->
+            <div class="cart-widget">
+                <h3>Текущая заявка (ID: {{.cart.ID}})</h3>
+                <p>Количество стратегий в заявке: <strong>{{len .cart.Strategies}}</strong></p>
+                <a href="/cart">Перейти к просмотру</a>
+            </div>
+
             <section class="recovery-strategies">
                 <h1>Стратегии восстановления</h1>
-                
                 <form action="/" method="GET" class="search-form">
                     <input type="search" name="query" placeholder="Поиск" class="search-form__input" value="{{.searchQuery}}">
                 </form>
-
                 <div class="strategies-grid">
                     {{range .strategies}}
                     <div class="strategy-card">
                         <img src="{{.ImageURL}}" alt="{{.Title}}" class="strategy-card__image">
                         <h3 class="strategy-card__title">{{.Title}}</h3>
-                        <a href="/strategy/{{.ID}}" class="strategy-card__link">Подробнее →</a>
+                        <a href="/strategy/{{.ID}}" class="strategy-card__details-link">Подробнее →</a>
+                        <!-- Кнопка добавления в корзину -->
+                        <form action="/cart/add/{{.ID}}" method="POST">
+                            <button type="submit" class="strategy-card__link">Добавить в заявку</button>
+                        </form>
                     </div>
                     {{end}}
                 </div>
-
             </section>
         </div>
     </main>
-
-    <a href="/calculator" class="calculator-link" title="Перейти к калькулятору">
-        <div class="calculator-icon">
-            <span class="icon-layer"></span>
-            <span class="icon-layer"></span>
-            <span class="icon-layer"></span>
-        </div>
-        <span class="calculator-badge">2</span>
-    </a>
 </body>
 </html>
