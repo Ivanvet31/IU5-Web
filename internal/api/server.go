@@ -1,4 +1,3 @@
-// internal/api/server.go
 package api
 
 import (
@@ -35,8 +34,10 @@ func StartServer() error {
 
 	// --- НОВЫЕ РОУТЫ ДЛЯ ЛАБОРАТОРНОЙ №2 ---
 	r.POST("/cart/add/:id", h.AddStrategyToCart) // Роут для добавления в корзину
+	r.GET("/cart", h.ShowCartPage)               // Роут для страницы корзины
+	r.POST("/cart/delete/:id", h.DeleteRequest)  // Роут для удаления
 
 	// 5. Запуск сервера
 	log.Println("Server is up and running on port 8080")
-	return r.Run()
+	return r.Run() // listen and serve on 0.0.0.0:8080
 }

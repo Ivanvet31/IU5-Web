@@ -64,3 +64,11 @@ func (r *Repository) LogicallyDeleteRequest(requestID uint) error {
 	result := r.db.Exec("UPDATE requests SET status = ? WHERE id = ?", "deleted", requestID)
 	return result.Error
 }
+
+// GetRequestWithStrategies загружает заявку и связанные с ней стратегии
+func (r *Repository) GetRequestWithStrategies(requestID uint) (app.Request, error) {
+	var request app.Request
+	// Используем Preload для автоматической загрузки связанных данных (JOIN)
+	err := r.db.Preload("Strategies").First(&request, requestID).Error
+	return request, err
+}
