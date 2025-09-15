@@ -20,7 +20,7 @@ func NewHandler(r *repository.Repository) *Handler {
 	}
 }
 
-// getCart - вспомогательная функция, чтобы не дублировать код получения корзины
+// getCart - вспомогательная функция
 func (h *Handler) getCart(userID uint) models.Request {
 	draftRequest, _ := h.Repository.GetOrCreateDraftRequest(userID)
 	if draftRequest.ID == 0 {
@@ -71,12 +71,7 @@ func (h *Handler) ShowStrategyPage(ctx *gin.Context) {
 	})
 }
 
-func (h *Handler) ShowCalculatorPage(ctx *gin.Context) {
-	const currentUserID uint = 1
-	ctx.HTML(http.StatusOK, "result_page.html", gin.H{
-		"cart": h.getCart(currentUserID),
-	})
-}
+// ФУНКЦИЯ ShowCalculatorPage БЫЛА ПОЛНОСТЬЮ УДАЛЕНА
 
 func (h *Handler) AddStrategyToCart(ctx *gin.Context) {
 	const currentUserID uint = 1
@@ -109,14 +104,14 @@ func (h *Handler) ShowCartPage(ctx *gin.Context) {
 	if cart.ID == 0 {
 		ctx.HTML(http.StatusOK, "cart.html", gin.H{
 			"cart":       nil,
-			"onCartPage": true, // <-- ДОБАВЛЕН ФЛАГ
+			"onCartPage": true,
 		})
 		return
 	}
 
 	ctx.HTML(http.StatusOK, "cart.html", gin.H{
 		"cart":       cart,
-		"onCartPage": true, // <-- ДОБАВЛЕН ФЛАГ
+		"onCartPage": true,
 	})
 }
 
