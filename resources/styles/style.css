@@ -200,3 +200,10 @@ body {
 .delete-form { margin-top: -55px; /* Поднимаем на уровень кнопки сохранения */ text-align: left; }
 .delete-button { background-color: #6c757d; color: white; border: none; padding: 15px 30px; border-radius: 8px; cursor: pointer; font-size: 16px; }
 .delete-button:hover { background-color: #5a6268; }
+
+/* Стиль для неактивной иконки корзины */
+.calculator-link.disabled {
+    pointer-events: none; /* Делает элемент некликабельным */
+    opacity: 0.6;         /* Делает его полупрозрачным */
+    cursor: default;      /* Убирает курсор-руку */
+}
