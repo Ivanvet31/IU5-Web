@@ -10,13 +10,17 @@
     <header class="header">
         <div class="container">
             <a href="/" class="logo">REcovery<span class="logo--accent">Time</span></a>
-            <a href="/cart" class="calculator-link" title="Перейти к заявке">
+            <!-- ИЗМЕНЕНО: Добавлено условие для неактивной ссылки -->
+            {{if gt (len .cart.Strategies) 0}}
+                <a href="/cart" class="calculator-link" title="Перейти к заявке">
+            {{else}}
+                <a class="calculator-link disabled" title="Корзина пуста">
+            {{end}}
                 <div class="calculator-icon">
                     <span class="icon-layer"></span>
                     <span class="icon-layer"></span>
                     <span class="icon-layer"></span>
                 </div>
-                <!-- Динамический счетчик -->
                 <span class="calculator-badge">{{len .cart.Strategies}}</span>
             </a>
         </div>
@@ -42,7 +46,6 @@
                         <img src="{{.ImageURL}}" alt="{{.Title}}" class="strategy-card__image">
                         <h3 class="strategy-card__title">{{.Title}}</h3>
                         <a href="/strategy/{{.ID}}" class="strategy-card__details-link">Подробнее →</a>
-                        <!-- Кнопка добавления в корзину -->
                         <form action="/cart/add/{{.ID}}" method="POST">
                             <button type="submit" class="strategy-card__link">Добавить в заявку</button>
                         </form>

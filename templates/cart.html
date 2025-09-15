@@ -10,18 +10,21 @@
     <header class="header">
         <div class="container">
             <a href="/" class="logo">REcovery<span class="logo--accent">Time</span></a>
-            <a href="/cart" class="calculator-link" title="Перейти к заявке">
-                <div class="calculator-icon">
-                    <span class="icon-layer"></span>
-                    <span class="icon-layer"></span>
-                    <span class="icon-layer"></span>
-                </div>
-                {{if .cart}}
-                    <span class="calculator-badge">{{len .cart.Strategies}}</span>
-                {{else}}
-                    <span class="calculator-badge">0</span>
-                {{end}}
-            </a>
+            <!-- ИЗМЕНЕНО: Иконка теперь скрывается на этой странице -->
+            {{if not .onCartPage}}
+                <a href="/cart" class="calculator-link" title="Перейти к заявке">
+                    <div class="calculator-icon">
+                        <span class="icon-layer"></span>
+                        <span class="icon-layer"></span>
+                        <span class="icon-layer"></span>
+                    </div>
+                    {{if .cart}}
+                        <span class="calculator-badge">{{len .cart.Strategies}}</span>
+                    {{else}}
+                        <span class="calculator-badge">0</span>
+                    {{end}}
+                </a>
+            {{end}}
         </div>
     </header>
 
@@ -32,8 +35,6 @@
                 {{if and .cart .cart.ID}}
                     <p><strong>ID Заявки:</strong> {{.cart.ID}} | <strong>Статус:</strong> {{.cart.Status}}</p>
                     <hr>
-
-                    <!-- ОСНОВНАЯ ФОРМА ДЛЯ КАЛЬКУЛЯТОРА И УДАЛЕНИЯ -->
                     <form action="/cart/update/{{.cart.ID}}" method="POST" class="calculator-form">
                         
                         <!-- Поля из старого калькулятора -->

@@ -10,14 +10,18 @@
     <header class="header">
         <div class="container">
             <a href="/" class="logo">REcovery<span class="logo--accent">Time</span></a>
-            <a href="/cart" class="calculator-link" title="Перейти к заявке">
+            <!-- ИЗМЕНЕНО: Добавлено условие для неактивной ссылки -->
+            {{if gt (len .cart.Strategies) 0}}
+                <a href="/cart" class="calculator-link" title="Перейти к заявке">
+            {{else}}
+                <a class="calculator-link disabled" title="Корзина пуста">
+            {{end}}
                 <div class="calculator-icon">
                     <span class="icon-layer"></span>
                     <span class="icon-layer"></span>
                     <span class="icon-layer"></span>
                 </div>
-                <!-- Здесь счетчик можно сделать статичным или передавать данные -->
-                <span class="calculator-badge">!</span> 
+                <span class="calculator-badge">{{len .cart.Strategies}}</span>
             </a>
         </div>
     </header>
@@ -33,7 +37,6 @@
                             <p class="details-content__text">
                                 {{.strategy.Description}}
                             </p>
-                            <!-- Форма для добавления в заявку -->
                             <form action="/cart/add/{{.strategy.ID}}" method="POST" class="add-to-cart-form">
                                 <button type="submit">Добавить в заявку</button>
                             </form>
