@@ -28,33 +28,66 @@
     <main class="main">
         <div class="container">
             <div class="content-card">
-                <h2>Содержимое заявки</h2>
+                <h2>Содержимое и параметры заявки</h2>
                 {{if and .cart .cart.ID}}
                     <p><strong>ID Заявки:</strong> {{.cart.ID}} | <strong>Статус:</strong> {{.cart.Status}}</p>
-                    
                     <hr>
 
-                    {{if .cart.Strategies}}
-                        {{range .cart.Strategies}}
-                        <div class="strategy-block">
-                            <div class="strategy-info">
-                                <img src="{{.ImageURL}}" alt="{{.Title}}">
-                                <div class="strategy-title-group">
-                                    <h4>{{.Title}}</h4>
-                                </div>
+                    <!-- ОСНОВНАЯ ФОРМА ДЛЯ КАЛЬКУЛЯТОРА И УДАЛЕНИЯ -->
+                    <form action="/cart/update/{{.cart.ID}}" method="POST" class="calculator-form">
+                        
+                        <!-- Поля из старого калькулятора -->
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="it-level">Уровень квалификации IT-специалистов:</label>
+                                <input type="text" id="it-level" name="it_skill_level" placeholder="Начинающий, средний, эксперт" value="{{if .cart.ItSkillLevel}}{{.cart.ItSkillLevel}}{{end}}">
+                            </div>
+                            <div class="form-group">
+                                <label for="channel-speed">Средняя пропускная способность канала (Мбит/с):</label>
+                                <input type="number" id="channel-speed" name="network_bandwidth_mbps" placeholder="Например, 100" value="{{if .cart.NetworkBandwidthMbps}}{{.cart.NetworkBandwidthMbps}}{{end}}">
                             </div>
                         </div>
-                        {{end}}
-                    {{else}}
-                        <p>В заявке пока нет ни одной стратегии.</p>
-                    {{end}}
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="doc-quality">Качество документации по инфраструктуре:</label>
+                                <input type="text" id="doc-quality" name="documentation_quality" placeholder="Отличная, хорошая, удовлетворительная" value="{{if .cart.DocumentationQuality}}{{.cart.DocumentationQuality}}{{end}}">
+                            </div>
+                        </div>
 
-                    <!-- Форма для логического удаления заявки -->
+                        <h3 class="strategies-list-header">Стратегии в заявке:</h3>
+
+                        <!-- Список стратегий в заявке -->
+                        {{if .cart.Strategies}}
+                            {{range .cart.Strategies}}
+                            <div class="strategy-block">
+                                <div class="strategy-info">
+                                    <img src="{{.ImageURL}}" alt="{{.Title}}">
+                                    <div class="strategy-title-group">
+                                        <h4>{{.Title}}</h4>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="backup-data-{{.ID}}">Общий объем данных (GB)</label>
+                                    <input type="number" id="backup-data-{{.ID}}" name="data_gb_{{.ID}}" placeholder="GB">
+                                </div>
+                            </div>
+                            {{end}}
+                        {{else}}
+                            <p>В заявке пока нет ни одной стратегии. Добавьте их на главной странице.</p>
+                        {{end}}
+                        
+                        <!-- Кнопки управления -->
+                        <div class="form-actions">
+                            <button type="submit" class="save-button">Сохранить параметры</button>
+                        </div>
+                    </form>
+
+                    <!-- Форма для логического удаления вынесена отдельно -->
                     <form action="/cart/delete/{{.cart.ID}}" method="POST" class="delete-form">
                         <button type="submit" class="delete-button">Удалить заявку</button>
                     </form>
                 {{else}}
-                    <p>У вас нет активной заявки (корзины).</p>
+                    <p>У вас нет активной заявки (корзины). Добавьте первую услугу на главной странице.</p>
                 {{end}}
             </div>
         </div>
