@@ -1,7 +1,7 @@
 package repository
 
 import (
-	"lab1/internal/app/models" // Используем новый пакет models
+	"lab1/internal/app/models"
 
 	"gorm.io/gorm"
 )
@@ -34,14 +34,14 @@ func (r *Repository) GetStrategyByID(id uint) (models.Strategy, error) {
 	return strategy, err
 }
 
-// --- НОВЫЕ МЕТОДЫ ДЛЯ РАБОТЫ С ЗАЯВКАМИ ---
-
+// GetOrCreateDraftRequest находит или создает черновик заявки для пользователя
 func (r *Repository) GetOrCreateDraftRequest(userID uint) (models.Request, error) {
 	var request models.Request
 	err := r.db.Where(models.Request{UserID: userID, Status: "draft"}).FirstOrCreate(&request).Error
 	return request, err
 }
 
+// AddStrategyToRequest добавляет стратегию в заявку
 func (r *Repository) AddStrategyToRequest(requestID, strategyID uint, dataGB int) error {
 	association := models.RequestStrategy{
 		RequestID:       requestID,
@@ -51,13 +51,22 @@ func (r *Repository) AddStrategyToRequest(requestID, strategyID uint, dataGB int
 	return r.db.Create(&association).Error
 }
 
+// GetRequestWithStrategies загружает заявку и связанные с ней стратегии
 func (r *Repository) GetRequestWithStrategies(requestID uint) (models.Request, error) {
 	var request models.Request
 	err := r.db.Preload("Strategies").First(&request, requestID).Error
 	return request, err
 }
 
+// LogicallyDeleteRequest выполняет ЧИСТЫЙ SQL-ЗАПРОС, как требует задание
 func (r *Repository) LogicallyDeleteRequest(requestID uint) error {
 	result := r.db.Exec("UPDATE requests SET status = ? WHERE id = ?", "deleted", requestID)
 	return result.Error
+}
+
+// UpdateRequestDetails обновляет поля заявки данными из калькулятора
+func (r *Repository) UpdateRequestDetails(requestID uint, details models.Request) error {
+	// Используем Model(&models.Request{}) чтобы указать, с какой таблицей работаем,
+	// и Updates для обновления только указанных полей.
+	return r.db.Model(&models.Request{}).Where("id = ?", requestID).Updates(details).Error
 }

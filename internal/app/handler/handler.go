@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"lab1/internal/app/models"
 	"lab1/internal/app/repository"
 	"net/http"
 	"strconv"
@@ -66,17 +67,14 @@ func (h *Handler) ShowStrategyPage(ctx *gin.Context) {
 	})
 }
 
-// ShowCalculatorPage отображает страницу калькулятора
+// ShowCalculatorPage отображает страницу калькулятора (теперь не используется, но оставим для совместимости)
 func (h *Handler) ShowCalculatorPage(ctx *gin.Context) {
 	ctx.HTML(http.StatusOK, "result_page.html", nil)
 }
 
-// --- НОВЫЕ ОБРАБОТЧИКИ ДЛЯ ЛАБОРАТОРНОЙ №2 ---
-
 // AddStrategyToCart добавляет услугу в корзину (черновик заявки)
 func (h *Handler) AddStrategyToCart(ctx *gin.Context) {
-	// Симулируем, что у нас залогинен пользователь с ID = 1
-	const currentUserID uint = 1
+	const currentUserID uint = 1 // Симуляция пользователя
 
 	strategyIDStr := ctx.Param("id")
 	strategyID, err := strconv.Atoi(strategyIDStr)
@@ -85,7 +83,6 @@ func (h *Handler) AddStrategyToCart(ctx *gin.Context) {
 		return
 	}
 
-	// Находим или создаем для пользователя черновик заявки
 	request, err := h.Repository.GetOrCreateDraftRequest(currentUserID)
 	if err != nil {
 		logrus.Errorf("ошибка получения/создания заявки: %v", err)
@@ -93,15 +90,11 @@ func (h *Handler) AddStrategyToCart(ctx *gin.Context) {
 		return
 	}
 
-	// Добавляем стратегию в заявку. Пока что с фиксированным объемом данных.
 	err = h.Repository.AddStrategyToRequest(request.ID, uint(strategyID), 100) // 100GB - для примера
 	if err != nil {
-		logrus.Errorf("ошибка добавления стратегии в заявку: %v", err)
-		// Не показываем ошибку, если запись уже существует
-		// Можно добавить более сложную логику, если нужно
+		logrus.Warnf("ошибка добавления стратегии в заявку (возможно, уже существует): %v", err)
 	}
 
-	// После успешного добавления перенаправляем пользователя обратно на главную
 	ctx.Redirect(http.StatusFound, "/")
 }
 
@@ -109,15 +102,15 @@ func (h *Handler) AddStrategyToCart(ctx *gin.Context) {
 func (h *Handler) ShowCartPage(ctx *gin.Context) {
 	const currentUserID uint = 1 // Симуляция пользователя
 
-	draftRequest, err := h.Repository.GetOrCreateDraftRequest(currentUserID)
-	if err != nil {
-		ctx.String(http.StatusInternalServerError, "Ошибка сервера")
+	draftRequest, _ := h.Repository.GetOrCreateDraftRequest(currentUserID)
+	// Проверяем, существует ли вообще заявка
+	if draftRequest.ID == 0 {
+		ctx.HTML(http.StatusOK, "cart.html", gin.H{"cart": nil})
 		return
 	}
 
 	cart, err := h.Repository.GetRequestWithStrategies(draftRequest.ID)
 	if err != nil {
-		// Если корзина не найдена (например, после удаления), показываем пустую страницу
 		if err == gorm.ErrRecordNotFound {
 			ctx.HTML(http.StatusOK, "cart.html", gin.H{"cart": nil})
 			return
@@ -147,6 +140,45 @@ func (h *Handler) DeleteRequest(ctx *gin.Context) {
 		return
 	}
 
-	// После удаления перенаправляем пользователя на пустую корзину
+	ctx.Redirect(http.StatusFound, "/cart")
+}
+
+// UpdateRequest сохраняет данные из формы калькулятора в заявку
+func (h *Handler) UpdateRequest(ctx *gin.Context) {
+	idStr := ctx.Param("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		ctx.String(http.StatusBadRequest, "Некорректный ID заявки")
+		return
+	}
+
+	// Извлекаем данные из формы
+	skillLevel := ctx.PostForm("it_skill_level")
+	docQuality := ctx.PostForm("documentation_quality")
+	bandwidthStr := ctx.PostForm("network_bandwidth_mbps")
+
+	var bandwidth *int
+	if bandwidthStr != "" {
+		val, err := strconv.Atoi(bandwidthStr)
+		if err == nil {
+			bandwidth = &val
+		} else {
+			logrus.Warnf("Некорректное значение пропускной способности: %v", bandwidthStr)
+		}
+	}
+
+	// Создаем структуру с данными для обновления
+	updateData := models.Request{
+		ItSkillLevel:         &skillLevel,
+		DocumentationQuality: &docQuality,
+		NetworkBandwidthMbps: bandwidth,
+	}
+
+	if err := h.Repository.UpdateRequestDetails(uint(id), updateData); err != nil {
+		logrus.Errorf("ошибка обновления заявки: %v", err)
+		ctx.String(http.StatusInternalServerError, "Ошибка сервера")
+		return
+	}
+
 	ctx.Redirect(http.StatusFound, "/cart")
 }

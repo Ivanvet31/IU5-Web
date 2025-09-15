@@ -36,6 +36,7 @@ func StartServer() error {
 	r.POST("/cart/add/:id", h.AddStrategyToCart) // Роут для добавления в корзину
 	r.GET("/cart", h.ShowCartPage)               // Роут для страницы корзины
 	r.POST("/cart/delete/:id", h.DeleteRequest)  // Роут для удаления
+	r.POST("/cart/update/:id", h.UpdateRequest)  // Роут для обновления заявки
 
 	// 5. Запуск сервера
 	log.Println("Server is up and running on port 8080")
