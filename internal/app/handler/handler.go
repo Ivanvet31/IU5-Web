@@ -8,7 +8,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
-	"gorm.io/gorm"
 )
 
 type Handler struct {
@@ -21,11 +20,20 @@ func NewHandler(r *repository.Repository) *Handler {
 	}
 }
 
-// ShowIndexPage теперь также передает информацию о корзине
-func (h *Handler) ShowIndexPage(ctx *gin.Context) {
-	const currentUserID uint = 1 // Симуляция пользователя
+// getCart - вспомогательная функция, чтобы не дублировать код получения корзины
+func (h *Handler) getCart(userID uint) models.Request {
+	draftRequest, _ := h.Repository.GetOrCreateDraftRequest(userID)
+	if draftRequest.ID == 0 {
+		return models.Request{}
+	}
+	cart, _ := h.Repository.GetRequestWithStrategies(draftRequest.ID)
+	return cart
+}
 
+func (h *Handler) ShowIndexPage(ctx *gin.Context) {
+	const currentUserID uint = 1
 	searchQuery := ctx.Query("query")
+
 	strategies, err := h.Repository.GetStrategies(searchQuery)
 	if err != nil {
 		logrus.Errorf("ошибка получения стратегий: %v", err)
@@ -33,20 +41,15 @@ func (h *Handler) ShowIndexPage(ctx *gin.Context) {
 		return
 	}
 
-	// Получаем черновик заявки, чтобы отобразить виджет корзины
-	draftRequest, _ := h.Repository.GetOrCreateDraftRequest(currentUserID)
-	// Загружаем связанные стратегии, чтобы посчитать их количество
-	cart, _ := h.Repository.GetRequestWithStrategies(draftRequest.ID)
-
 	ctx.HTML(http.StatusOK, "index.html", gin.H{
 		"strategies":  strategies,
 		"searchQuery": searchQuery,
-		"cart":        cart, // Передаем всю корзину в шаблон
+		"cart":        h.getCart(currentUserID),
 	})
 }
 
-// ShowStrategyPage отображает страницу с детальным описанием одной стратегии
 func (h *Handler) ShowStrategyPage(ctx *gin.Context) {
+	const currentUserID uint = 1
 	idStr := ctx.Param("id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
@@ -64,18 +67,19 @@ func (h *Handler) ShowStrategyPage(ctx *gin.Context) {
 
 	ctx.HTML(http.StatusOK, "description.html", gin.H{
 		"strategy": strategy,
+		"cart":     h.getCart(currentUserID),
 	})
 }
 
-// ShowCalculatorPage отображает страницу калькулятора (теперь не используется, но оставим для совместимости)
 func (h *Handler) ShowCalculatorPage(ctx *gin.Context) {
-	ctx.HTML(http.StatusOK, "result_page.html", nil)
+	const currentUserID uint = 1
+	ctx.HTML(http.StatusOK, "result_page.html", gin.H{
+		"cart": h.getCart(currentUserID),
+	})
 }
 
-// AddStrategyToCart добавляет услугу в корзину (черновик заявки)
 func (h *Handler) AddStrategyToCart(ctx *gin.Context) {
-	const currentUserID uint = 1 // Симуляция пользователя
-
+	const currentUserID uint = 1
 	strategyIDStr := ctx.Param("id")
 	strategyID, err := strconv.Atoi(strategyIDStr)
 	if err != nil {
@@ -90,7 +94,7 @@ func (h *Handler) AddStrategyToCart(ctx *gin.Context) {
 		return
 	}
 
-	err = h.Repository.AddStrategyToRequest(request.ID, uint(strategyID), 100) // 100GB - для примера
+	err = h.Repository.AddStrategyToRequest(request.ID, uint(strategyID), 100)
 	if err != nil {
 		logrus.Warnf("ошибка добавления стратегии в заявку (возможно, уже существует): %v", err)
 	}
@@ -98,33 +102,24 @@ func (h *Handler) AddStrategyToCart(ctx *gin.Context) {
 	ctx.Redirect(http.StatusFound, "/")
 }
 
-// ShowCartPage отображает содержимое корзины
 func (h *Handler) ShowCartPage(ctx *gin.Context) {
-	const currentUserID uint = 1 // Симуляция пользователя
+	const currentUserID uint = 1
+	cart := h.getCart(currentUserID)
 
-	draftRequest, _ := h.Repository.GetOrCreateDraftRequest(currentUserID)
-	// Проверяем, существует ли вообще заявка
-	if draftRequest.ID == 0 {
-		ctx.HTML(http.StatusOK, "cart.html", gin.H{"cart": nil})
-		return
-	}
-
-	cart, err := h.Repository.GetRequestWithStrategies(draftRequest.ID)
-	if err != nil {
-		if err == gorm.ErrRecordNotFound {
-			ctx.HTML(http.StatusOK, "cart.html", gin.H{"cart": nil})
-			return
-		}
-		ctx.String(http.StatusInternalServerError, "Ошибка сервера")
+	if cart.ID == 0 {
+		ctx.HTML(http.StatusOK, "cart.html", gin.H{
+			"cart":       nil,
+			"onCartPage": true, // <-- ДОБАВЛЕН ФЛАГ
+		})
 		return
 	}
 
 	ctx.HTML(http.StatusOK, "cart.html", gin.H{
-		"cart": cart,
+		"cart":       cart,
+		"onCartPage": true, // <-- ДОБАВЛЕН ФЛАГ
 	})
 }
 
-// DeleteRequest выполняет логическое удаление заявки
 func (h *Handler) DeleteRequest(ctx *gin.Context) {
 	idStr := ctx.Param("id")
 	id, err := strconv.Atoi(idStr)
@@ -143,7 +138,6 @@ func (h *Handler) DeleteRequest(ctx *gin.Context) {
 	ctx.Redirect(http.StatusFound, "/cart")
 }
 
-// UpdateRequest сохраняет данные из формы калькулятора в заявку
 func (h *Handler) UpdateRequest(ctx *gin.Context) {
 	idStr := ctx.Param("id")
 	id, err := strconv.Atoi(idStr)
@@ -152,7 +146,6 @@ func (h *Handler) UpdateRequest(ctx *gin.Context) {
 		return
 	}
 
-	// Извлекаем данные из формы
 	skillLevel := ctx.PostForm("it_skill_level")
 	docQuality := ctx.PostForm("documentation_quality")
 	bandwidthStr := ctx.PostForm("network_bandwidth_mbps")
@@ -167,7 +160,6 @@ func (h *Handler) UpdateRequest(ctx *gin.Context) {
 		}
 	}
 
-	// Создаем структуру с данными для обновления
 	updateData := models.Request{
 		ItSkillLevel:         &skillLevel,
 		DocumentationQuality: &docQuality,
