@@ -58,7 +58,7 @@ func (r *Repository) GetRequestWithStrategies(requestID uint) (models.Request, e
 	return request, err
 }
 
-// LogicallyDeleteRequest выполняет ЧИСТЫЙ SQL-ЗАПРОС, как требует задание
+// LogicallyDeleteRequest
 func (r *Repository) LogicallyDeleteRequest(requestID uint) error {
 	result := r.db.Exec("UPDATE requests SET status = ? WHERE id = ?", "deleted", requestID)
 	return result.Error
