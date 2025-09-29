@@ -56,7 +56,6 @@ func (h *Handler) GetRequest(c *gin.Context) {
 		return
 	}
 
-	// Маппинг в DTO для чистого ответа
 	var strategyDTOs []ds.StrategyDTO
 	for _, s := range request.Strategies {
 		strategyDTOs = append(strategyDTOs, ds.StrategyDTO{
@@ -104,7 +103,6 @@ func (h *Handler) UpdateRequestDetails(c *gin.Context) {
 		h.errorHandler(c, http.StatusInternalServerError, err)
 		return
 	}
-
 	c.Status(http.StatusNoContent)
 }
 
@@ -150,7 +148,7 @@ func (h *Handler) FormRequest(c *gin.Context) {
 		return
 	}
 	if err := h.Repository.FormRequest(uint(id), hardcodedUserID); err != nil {
-		h.errorHandler(c, http.StatusBadRequest, err) // 400, т.к. ошибка скорее всего в бизнес-логике (не тот статус и т.д.)
+		h.errorHandler(c, http.StatusBadRequest, err)
 		return
 	}
 	c.Status(http.StatusNoContent)
@@ -168,7 +166,6 @@ func (h *Handler) ResolveRequest(c *gin.Context) {
 		h.errorHandler(c, http.StatusBadRequest, err)
 		return
 	}
-	// В реальном приложении ID модератора берется из токена
 	if err := h.Repository.ResolveRequest(uint(id), hardcodedUserID, req.Action); err != nil {
 		h.errorHandler(c, http.StatusBadRequest, err)
 		return
@@ -176,9 +173,9 @@ func (h *Handler) ResolveRequest(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
-// PUT /api/requests/:request_id/strategies/:strategy_id
+// PUT /api/requests/:id/strategies/:strategy_id
 func (h *Handler) UpdateRequestStrategy(c *gin.Context) {
-	requestID, err := strconv.Atoi(c.Param("request_id"))
+	requestID, err := strconv.Atoi(c.Param("id")) // <-- ИСПРАВЛЕНО c "request_id" на "id"
 	if err != nil {
 		h.errorHandler(c, http.StatusBadRequest, err)
 		return
@@ -200,9 +197,9 @@ func (h *Handler) UpdateRequestStrategy(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
-// DELETE /api/requests/:request_id/strategies/:strategy_id
+// DELETE /api/requests/:id/strategies/:strategy_id
 func (h *Handler) RemoveStrategyFromRequest(c *gin.Context) {
-	requestID, err := strconv.Atoi(c.Param("request_id"))
+	requestID, err := strconv.Atoi(c.Param("id")) // <-- ИСПРАВЛЕНО c "request_id" на "id"
 	if err != nil {
 		h.errorHandler(c, http.StatusBadRequest, err)
 		return
