@@ -40,5 +40,5 @@ type Request struct {
 type RequestStrategy struct {
 	RequestID       uint `gorm:"primaryKey"`
 	StrategyID      uint `gorm:"primaryKey"`
-	DataToRecoverGB int  `gorm:"not null;default:0"`
+	DataToRecoverGB int  `gorm:"not null"`
 }
