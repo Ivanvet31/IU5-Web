@@ -10,21 +10,6 @@
     <header class="header">
         <div class="container">
             <a href="/" class="logo">REcovery<span class="logo--accent">Time</span></a>
-            <!-- ИЗМЕНЕНО: Иконка теперь скрывается на этой странице -->
-            {{if not .onCartPage}}
-                <a href="/cart" class="calculator-link" title="Перейти к заявке">
-                    <div class="calculator-icon">
-                        <span class="icon-layer"></span>
-                        <span class="icon-layer"></span>
-                        <span class="icon-layer"></span>
-                    </div>
-                    {{if .cart}}
-                        <span class="calculator-badge">{{len .cart.Strategies}}</span>
-                    {{else}}
-                        <span class="calculator-badge">0</span>
-                    {{end}}
-                </a>
-            {{end}}
         </div>
     </header>
 
@@ -34,14 +19,23 @@
                 <h2>Содержимое и параметры заявки</h2>
                 {{if and .cart .cart.ID}}
                     <p><strong>ID Заявки:</strong> {{.cart.ID}} | <strong>Статус:</strong> {{.cart.Status}}</p>
+                    
+                    <!-- ИЗМЕНЕНИЕ ЗДЕСЬ: Проверяем и используем новую переменную recoveryTime -->
+                    {{if .recoveryTime}}
+                    <div class="result-display">
+                        <h4>Прогнозное время восстановления:</h4>
+                        <span>{{printf "%.2f" .recoveryTime}} часов</span>
+                    </div>
+                    {{end}}
+
                     <hr>
+
                     <form action="/cart/update/{{.cart.ID}}" method="POST" class="calculator-form">
                         
-                        <!-- Поля из старого калькулятора -->
                         <div class="form-row">
                             <div class="form-group">
                                 <label for="it-level">Уровень квалификации IT-специалистов:</label>
-                                <input type="text" id="it-level" name="it_skill_level" placeholder="Начинающий, средний, эксперт" value="{{if .cart.ItSkillLevel}}{{.cart.ItSkillLevel}}{{end}}">
+                                <input type="text" id="it-level" name="it_skill_level" placeholder="начинающий, средний, эксперт" value="{{if .cart.ItSkillLevel}}{{.cart.ItSkillLevel}}{{end}}">
                             </div>
                             <div class="form-group">
                                 <label for="channel-speed">Средняя пропускная способность канала (Мбит/с):</label>
@@ -51,13 +45,12 @@
                         <div class="form-row">
                             <div class="form-group">
                                 <label for="doc-quality">Качество документации по инфраструктуре:</label>
-                                <input type="text" id="doc-quality" name="documentation_quality" placeholder="Отличная, хорошая, удовлетворительная" value="{{if .cart.DocumentationQuality}}{{.cart.DocumentationQuality}}{{end}}">
+                                <input type="text" id="doc-quality" name="documentation_quality" placeholder="отличная, хорошая, удовлетворительная" value="{{if .cart.DocumentationQuality}}{{.cart.DocumentationQuality}}{{end}}">
                             </div>
                         </div>
 
                         <h3 class="strategies-list-header">Стратегии в заявке:</h3>
 
-                        <!-- Список стратегий в заявке -->
                         {{if .cart.Strategies}}
                             {{range .cart.Strategies}}
                             <div class="strategy-block">
@@ -77,13 +70,11 @@
                             <p>В заявке пока нет ни одной стратегии. Добавьте их на главной странице.</p>
                         {{end}}
                         
-                        <!-- Кнопки управления -->
                         <div class="form-actions">
-                            <button type="submit" class="save-button">Сохранить параметры</button>
+                            <button type="submit" class="save-button">Сохранить и рассчитать</button>
                         </div>
                     </form>
 
-                    <!-- Форма для логического удаления вынесена отдельно -->
                     <form action="/cart/delete/{{.cart.ID}}" method="POST" class="delete-form">
                         <button type="submit" class="delete-button">Удалить заявку</button>
                     </form>

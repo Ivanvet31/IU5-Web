@@ -1,17 +1,42 @@
 package main
 
 import (
-	"lab1/internal/api"
-	"log"
+	"RIP/internal/app/config"
+	"RIP/internal/app/dsn"
+	"RIP/internal/app/handler"
+	"RIP/internal/app/repository"
+	"RIP/internal/pkg"
+
+	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
+	"github.com/sirupsen/logrus"
 )
 
 func main() {
-	log.Println("Application starting...")
+	logrus.Info("Application starting...")
 
-	// Запускаем сервер из пакета api
-	if err := api.StartServer(); err != nil {
-		log.Fatalf("Failed to start server: %v", err)
+	if err := godotenv.Load(); err != nil {
+		logrus.Fatalf("error loading .env file: %v", err)
 	}
 
-	log.Println("Application stopped.")
+	conf, err := config.NewConfig()
+	if err != nil {
+		logrus.Fatalf("error loading config: %v", err)
+	}
+
+	postgresString := dsn.FromEnv()
+	if postgresString == "" {
+		logrus.Fatal("DSN string is empty, check your .env file")
+	}
+
+	repo, err := repository.New(postgresString)
+	if err != nil {
+		logrus.Fatalf("error initializing repository: %v", err)
+	}
+
+	hand := handler.NewHandler(repo)
+	router := gin.Default()
+	application := pkg.NewApp(conf, router, hand)
+
+	application.RunApp()
 }

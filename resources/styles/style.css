@@ -170,22 +170,31 @@ body {
 .strategy-info img { width: 100px; height: auto; border-radius: 8px; }
 .strategy-title-group h4 { margin: 0 0 5px 0; font-size: 18px; }
 .strategy-title-group a { color: #E53935; text-decoration: none; font-size: 14px; }
-.total-time { background-color: #2C2C2C; color: #FFFFFF; border-radius: 15px; padding: 20px; margin-top: 20px; display: flex; justify-content: space-between; align-items: center; }
-.total-time label { font-size: 24px; font-weight: 500;}
-.total-time input { max-width: 150px; text-align: center; font-weight: bold; }
 
-/* Стили для иконки калькулятора/корзины в хедере */
-.calculator-link { position: relative; display: flex; justify-content: center; align-items: center; width: 50px; height: 50px; background-color: #FFFFFF; border: 2px solid #E53935; border-radius: 50%; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); cursor: pointer; transition: transform 0.2s ease-in-out; text-decoration: none; }
+/* Стили для иконки корзины (НОВАЯ ВЕРСИЯ) */
+.calculator-link {
+    position: fixed; /* Плавающее позиционирование */
+    top: 100px;      /* Отступ от верха, ПОД хедером */
+    right: 40px;     /* Отступ справа */
+    z-index: 1000;   /* Поверх всего контента */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 60px;
+    height: 60px;
+    background-color: #FFFFFF;
+    border: 2px solid #E53935;
+    border-radius: 50%;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+    cursor: pointer;
+    transition: transform 0.2s ease-in-out;
+    text-decoration: none;
+}
 .calculator-link:hover { transform: scale(1.1); }
-.calculator-icon { position: relative; width: 24px; height: 24px; display: flex; flex-direction: column; justify-content: center; align-items: center; }
-.icon-layer { display: block; width: 24px; height: 2px; background-color: #333; border: none; margin-bottom: 4px; }
+.calculator-icon { position: relative; width: 30px; height: 30px; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+.icon-layer { display: block; width: 28px; height: 2px; background-color: #333; border: none; margin-bottom: 5px; }
 .icon-layer:last-child { margin-bottom: 0; }
-.calculator-badge { position: absolute; top: -3px; right: -3px; width: 20px; height: 20px; background-color: #E53935; color: #FFFFFF; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 12px; font-weight: bold; border: 2px solid #FFFFFF; }
-
-/* Стили для виджета корзины на главной */
-.cart-widget { background-color: #e9ecef; border: 1px solid #dee2e6; border-radius: 15px; padding: 20px; margin-bottom: 40px; text-align: center; }
-.cart-widget h3 { margin-top: 0; }
-.cart-widget a { color: #E53935; font-weight: bold; text-decoration: none; }
+.calculator-badge { position: absolute; top: -5px; right: -8px; width: 24px; height: 24px; background-color: #E53935; color: #FFFFFF; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 14px; font-weight: bold; border: 2px solid #FFFFFF; }
 
 /* Стили для кнопки "Добавить в заявку" на странице описания */
 .add-to-cart-form { margin-top: 20px; }
@@ -197,13 +206,35 @@ body {
 .form-actions { display: flex; justify-content: flex-end; margin-top: 20px; }
 .save-button { background-color: #E53935; color: white; border: none; padding: 15px 30px; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: bold; }
 .save-button:hover { background-color: #c62828; }
-.delete-form { margin-top: -55px; /* Поднимаем на уровень кнопки сохранения */ text-align: left; }
+.delete-form { margin-top: -55px; text-align: left; }
 .delete-button { background-color: #6c757d; color: white; border: none; padding: 15px 30px; border-radius: 8px; cursor: pointer; font-size: 16px; }
 .delete-button:hover { background-color: #5a6268; }
 
 /* Стиль для неактивной иконки корзины */
 .calculator-link.disabled {
-    pointer-events: none; /* Делает элемент некликабельным */
-    opacity: 0.6;         /* Делает его полупрозрачным */
-    cursor: default;      /* Убирает курсор-руку */
+    pointer-events: none;
+    opacity: 0.6;
+    cursor: default;
+}
+
+/* Стиль для блока с результатом расчета */
+.result-display {
+    background-color: #2C2C2C;
+    color: #FFFFFF;
+    border-radius: 15px;
+    padding: 20px;
+    margin-top: 20px;
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.result-display h4 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 500;
+}
+.result-display span {
+    font-size: 24px;
+    font-weight: bold;
 }
