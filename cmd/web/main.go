@@ -4,14 +4,26 @@ import (
 	"RIP/internal/app/config"
 	"RIP/internal/app/dsn"
 	"RIP/internal/app/handler"
+	"RIP/internal/app/redis"
 	"RIP/internal/app/repository"
 	"RIP/internal/pkg"
+	"context"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	"github.com/sirupsen/logrus"
 )
 
+// @title           API Системы восстановления
+// @version         1.0
+// @description     API-сервер для управления заявками и стратегиями восстановления данных.
+// @contact.name    API Support
+// @contact.email   support@recovery-api.com
+// @host            localhost:8080
+// @BasePath        /api
+// @securityDefinitions.apikey ApiKeyAuth
+// @in header
+// @name Authorization
 func main() {
 	logrus.Info("Application starting...")
 
@@ -34,7 +46,12 @@ func main() {
 		logrus.Fatalf("error initializing repository: %v", err)
 	}
 
-	hand := handler.NewHandler(repo)
+	redisClient, err := redis.New(context.Background(), conf.Redis)
+	if err != nil {
+		logrus.Fatalf("error initializing redis: %v", err)
+	}
+
+	hand := handler.NewHandler(repo, redisClient, &conf.JWT)
 	router := gin.Default()
 	application := pkg.NewApp(conf, router, hand)
 

@@ -8,9 +8,23 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// GET /api/requests/cart
+// GetCartBadge godoc
+// @Summary      Получить информацию для иконки корзины (авторизованные пользователи)
+// @Description  Возвращает ID черновика текущего пользователя и количество стратегий в нем.
+// @Tags         requests
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Success      200 {object} ds.CartBadgeDTO
+// @Failure      401 {object} map[string]string "Необходима авторизация"
+// @Router       /recovery_requests/cart [get]
 func (h *Handler) GetCartBadge(c *gin.Context) {
-	draft, err := h.Repository.GetOrCreateDraftRequest(hardcodedUserID)
+	userID, err := getUserIDFromContext(c)
+	if err != nil {
+		h.errorHandler(c, http.StatusUnauthorized, err)
+		return
+	}
+
+	draft, err := h.Repository.GetOrCreateDraftRequest(userID)
 	if err != nil {
 		c.JSON(http.StatusOK, ds.CartBadgeDTO{RequestID: nil, Count: 0})
 		return
@@ -28,13 +42,31 @@ func (h *Handler) GetCartBadge(c *gin.Context) {
 	})
 }
 
-// GET /api/requests
+// ListRequests godoc
+// @Summary      Получить список заявок (авторизованные пользователи)
+// @Description  Возвращает список заявок. Для модератора - все, для пользователя - только его.
+// @Tags         requests
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Param        status query string false "Фильтр по статусу заявки (formed, completed, rejected)"
+// @Param        from query string false "Фильтр по дате 'от' (формат YYYY-MM-DD)"
+// @Param        to query string false "Фильтр по дате 'до' (формат YYYY-MM-DD)"
+// @Success      200 {array} ds.RequestDTO
+// @Failure      401 {object} map[string]string "Необходима авторизация"
+// @Router       /recovery_requests [get]
 func (h *Handler) ListRequests(c *gin.Context) {
+	userID, err := getUserIDFromContext(c)
+	if err != nil {
+		h.errorHandler(c, http.StatusUnauthorized, err)
+		return
+	}
+	isModerator := isUserModerator(c)
+
 	status := c.Query("status")
 	from := c.Query("from")
 	to := c.Query("to")
 
-	requests, err := h.Repository.ListRequestsFiltered(status, from, to)
+	requests, err := h.Repository.ListRequestsFiltered(userID, isModerator, status, from, to)
 	if err != nil {
 		h.errorHandler(c, http.StatusInternalServerError, err)
 		return
@@ -42,7 +74,17 @@ func (h *Handler) ListRequests(c *gin.Context) {
 	c.JSON(http.StatusOK, requests)
 }
 
-// GET /api/requests/:id
+// GetRequest godoc
+// @Summary      Получить одну заявку по ID (авторизованные пользователи)
+// @Description  Возвращает полную информацию о заявке, включая привязанные стратегии.
+// @Tags         requests
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Param        id path int true "ID заявки"
+// @Success      200 {object} ds.RequestDTO
+// @Failure      401 {object} map[string]string "Необходима авторизация"
+// @Failure      404 {object} map[string]string "Заявка не найдена"
+// @Router       /recovery_requests/{id} [get]
 func (h *Handler) GetRequest(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -86,7 +128,17 @@ func (h *Handler) GetRequest(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
-// PUT /api/requests/:id
+// UpdateRequestDetails godoc
+// @Summary      Обновить детали заявки (авторизованные пользователи)
+// @Description  Позволяет пользователю обновить поля своей заявки (уровень навыков, пропускная способность сети и т.д.).
+// @Tags         requests
+// @Accept       json
+// @Security     ApiKeyAuth
+// @Param        id path int true "ID заявки"
+// @Param        updateData body ds.UpdateRequestDetailsRequest true "Данные для обновления"
+// @Success      204 "No Content"
+// @Failure      401 {object} map[string]string "Необходима авторизация"
+// @Router       /recovery_requests/{id} [put]
 func (h *Handler) UpdateRequestDetails(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -106,29 +158,58 @@ func (h *Handler) UpdateRequestDetails(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
-// DELETE /api/requests/:id
+// DeleteRequest godoc
+// @Summary      Удалить заявку (черновик) (авторизованные пользователи)
+// @Description  Логически удаляет заявку, переводя ее в статус "удалена". Доступно только для создателя и только для черновиков.
+// @Tags         requests
+// @Security     ApiKeyAuth
+// @Param        id path int true "ID заявки"
+// @Success      204 "No Content"
+// @Failure      401 {object} map[string]string "Необходима авторизация"
+// @Failure      403 {object} map[string]string "Доступ запрещен"
+// @Router       /recovery_requests/{id} [delete]
 func (h *Handler) DeleteRequest(c *gin.Context) {
+	userID, err := getUserIDFromContext(c)
+	if err != nil {
+		h.errorHandler(c, http.StatusUnauthorized, err)
+		return
+	}
+
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		h.errorHandler(c, http.StatusBadRequest, err)
 		return
 	}
 
-	if err := h.Repository.LogicallyDeleteRequest(uint(id), hardcodedUserID); err != nil {
+	if err := h.Repository.LogicallyDeleteRequest(uint(id), userID); err != nil {
 		h.errorHandler(c, http.StatusInternalServerError, err)
 		return
 	}
 	c.Status(http.StatusNoContent)
 }
 
-// POST /api/requests/draft/strategies/:strategy_id
+// AddStrategyToDraft godoc
+// @Summary      Добавить стратегию в черновик заявки (авторизованные пользователи)
+// @Description  Находит или создает черновик заявки для текущего пользователя и добавляет в него стратегию.
+// @Tags         strategies
+// @Security     ApiKeyAuth
+// @Param        strategy_id path int true "ID стратегии для добавления"
+// @Success      201 "Created"
+// @Failure      401 {object} map[string]string "Необходима авторизация"
+// @Router       /recovery_requests/draft/strategies/{strategy_id} [post]
 func (h *Handler) AddStrategyToDraft(c *gin.Context) {
+	userID, err := getUserIDFromContext(c)
+	if err != nil {
+		h.errorHandler(c, http.StatusUnauthorized, err)
+		return
+	}
+
 	strategyID, err := strconv.Atoi(c.Param("strategy_id"))
 	if err != nil {
 		h.errorHandler(c, http.StatusBadRequest, err)
 		return
 	}
-	draft, err := h.Repository.GetOrCreateDraftRequest(hardcodedUserID)
+	draft, err := h.Repository.GetOrCreateDraftRequest(userID)
 	if err != nil {
 		h.errorHandler(c, http.StatusInternalServerError, err)
 		return
@@ -140,22 +221,54 @@ func (h *Handler) AddStrategyToDraft(c *gin.Context) {
 	c.Status(http.StatusCreated)
 }
 
-// PUT /api/requests/:id/form
+// FormRequest godoc
+// @Summary      Сформировать заявку (авторизованные пользователи)
+// @Description  Переводит заявку из статуса "черновик" в "сформирована".
+// @Tags         requests
+// @Security     ApiKeyAuth
+// @Param        id path int true "ID заявки (черновика)"
+// @Success      204 "No Content"
+// @Failure      401 {object} map[string]string "Необходима авторизация"
+// @Failure      403 {object} map[string]string "Доступ запрещен"
+// @Router       /recovery_requests/{id}/form [put]
 func (h *Handler) FormRequest(c *gin.Context) {
+	userID, err := getUserIDFromContext(c)
+	if err != nil {
+		h.errorHandler(c, http.StatusUnauthorized, err)
+		return
+	}
+
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		h.errorHandler(c, http.StatusBadRequest, err)
 		return
 	}
-	if err := h.Repository.FormRequest(uint(id), hardcodedUserID); err != nil {
+	if err := h.Repository.FormRequest(uint(id), userID); err != nil {
 		h.errorHandler(c, http.StatusBadRequest, err)
 		return
 	}
 	c.Status(http.StatusNoContent)
 }
 
-// PUT /api/requests/:id/resolve
+// ResolveRequest godoc
+// @Summary      Завершить или отклонить заявку (модератор)
+// @Description  Модератор завершает (с расчетом) или отклоняет заявку.
+// @Tags         requests
+// @Accept       json
+// @Security     ApiKeyAuth
+// @Param        id path int true "ID заявки"
+// @Param        action body ds.ResolveRequest true "Действие: 'complete' или 'reject'"
+// @Success      204 "No Content"
+// @Failure      401 {object} map[string]string "Необходима авторизация"
+// @Failure      403 {object} map[string]string "Доступ запрещен"
+// @Router       /recovery_requests/{id}/resolve [put]
 func (h *Handler) ResolveRequest(c *gin.Context) {
+	userID, err := getUserIDFromContext(c)
+	if err != nil {
+		h.errorHandler(c, http.StatusUnauthorized, err)
+		return
+	}
+
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		h.errorHandler(c, http.StatusBadRequest, err)
@@ -166,16 +279,27 @@ func (h *Handler) ResolveRequest(c *gin.Context) {
 		h.errorHandler(c, http.StatusBadRequest, err)
 		return
 	}
-	if err := h.Repository.ResolveRequest(uint(id), hardcodedUserID, req.Action); err != nil {
+	if err := h.Repository.ResolveRequest(uint(id), userID, req.Action); err != nil {
 		h.errorHandler(c, http.StatusBadRequest, err)
 		return
 	}
 	c.Status(http.StatusNoContent)
 }
 
-// PUT /api/requests/:id/strategies/:strategy_id
+// UpdateRequestStrategy godoc
+// @Summary      Обновить данные стратегии в заявке (авторизованные пользователи)
+// @Description  Изменяет дополнительные данные (например, объем данных) для конкретной стратегии в рамках одной заявки.
+// @Tags         m-m
+// @Accept       json
+// @Security     ApiKeyAuth
+// @Param        id path int true "ID заявки"
+// @Param        strategy_id path int true "ID стратегии"
+// @Param        updateData body ds.UpdateRequestStrategyRequest true "Новые данные"
+// @Success      204 "No Content"
+// @Failure      401 {object} map[string]string "Необходима авторизация"
+// @Router       /recovery_requests/{id}/strategies/{strategy_id} [put]
 func (h *Handler) UpdateRequestStrategy(c *gin.Context) {
-	requestID, err := strconv.Atoi(c.Param("id")) // <-- ИСПРАВЛЕНО c "request_id" на "id"
+	requestID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		h.errorHandler(c, http.StatusBadRequest, err)
 		return
@@ -197,9 +321,18 @@ func (h *Handler) UpdateRequestStrategy(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
-// DELETE /api/requests/:id/strategies/:strategy_id
+// RemoveStrategyFromRequest godoc
+// @Summary      Удалить стратегию из заявки (авторизованные пользователи)
+// @Description  Удаляет связь между заявкой и стратегией.
+// @Tags         m-m
+// @Security     ApiKeyAuth
+// @Param        id path int true "ID заявки"
+// @Param        strategy_id path int true "ID стратегии"
+// @Success      204 "No Content"
+// @Failure      401 {object} map[string]string "Необходима авторизация"
+// @Router       /recovery_requests/{id}/strategies/{strategy_id} [delete]
 func (h *Handler) RemoveStrategyFromRequest(c *gin.Context) {
-	requestID, err := strconv.Atoi(c.Param("id")) // <-- ИСПРАВЛЕНО c "request_id" на "id"
+	requestID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		h.errorHandler(c, http.StatusBadRequest, err)
 		return

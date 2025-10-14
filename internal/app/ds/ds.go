@@ -20,7 +20,7 @@ type Strategy struct {
 	BaseRecoveryHours float64
 }
 
-type Request struct {
+type Recovery_request struct {
 	ID                          uint      `gorm:"primaryKey"`
 	Status                      string    `gorm:"size:50;not null;default:'draft'"`
 	CreatedAt                   time.Time `gorm:"not null"`
@@ -34,7 +34,7 @@ type Request struct {
 	NetworkBandwidthMbps        *int
 	DocumentationQuality        *string `gorm:"size:50"`
 	CalculatedRecoveryTimeHours *float64
-	Strategies                  []Strategy `gorm:"many2many:request_strategies;"`
+	Strategies                  []Strategy `gorm:"many2many:request_strategies;joinForeignKey:RequestID;joinReferences:StrategyID"`
 }
 
 type RequestStrategy struct {

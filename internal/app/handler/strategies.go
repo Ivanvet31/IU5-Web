@@ -9,6 +9,16 @@ import (
 )
 
 // GET /api/strategies
+
+// GetStrategies godoc
+// @Summary      Получить список стратегий (все)
+// @Description  Возвращает список всех активных стратегий с возможностью фильтрации по названию.
+// @Tags         strategies
+// @Produce      json
+// @Param        title query string false "Фильтр по названию стратегии"
+// @Success      200 {array} ds.StrategyDTO
+// @Failure      500 {object} map[string]string "Внутренняя ошибка сервера"
+// @Router       /strategies [get]
 func (h *Handler) GetStrategies(c *gin.Context) {
 	title := c.Query("title") // Получаем параметр для фильтрации
 
@@ -33,6 +43,16 @@ func (h *Handler) GetStrategies(c *gin.Context) {
 }
 
 // GET /api/strategies/:id
+
+// GetStrategy godoc
+// @Summary      Получить одну стратегию по ID (все)
+// @Description  Возвращает детальную информацию о конкретной стратегии.
+// @Tags         strategies
+// @Produce      json
+// @Param        id path int true "ID стратегии"
+// @Success      200 {object} ds.StrategyDTO
+// @Failure      404 {object} map[string]string "Стратегия не найдена"
+// @Router       /strategies/{id} [get]
 func (h *Handler) GetStrategy(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -56,6 +76,20 @@ func (h *Handler) GetStrategy(c *gin.Context) {
 }
 
 // POST /api/strategies
+
+// CreateStrategy godoc
+// @Summary      Создать новую стратегию (модератор)
+// @Description  Создает новую запись о стратегии восстановления. Доступно только для модераторов.
+// @Tags         strategies
+// @Accept       json
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Param        strategy body ds.CreateStrategyRequest true "Данные новой стратегии"
+// @Success      201 {object} ds.StrategyDTO
+// @Failure      400 {object} map[string]string "Ошибка валидации"
+// @Failure      401 {object} map[string]string "Необходима авторизация"
+// @Failure      403 {object} map[string]string "Доступ запрещен (не модератор)"
+// @Router       /strategies [post]
 func (h *Handler) CreateStrategy(c *gin.Context) {
 	var req ds.CreateStrategyRequest
 	if err := c.BindJSON(&req); err != nil {
@@ -83,6 +117,20 @@ func (h *Handler) CreateStrategy(c *gin.Context) {
 }
 
 // PUT /api/strategies/:id
+
+// UpdateStrategy godoc
+// @Summary      Обновить стратегию (модератор)
+// @Description  Обновляет информацию о существующей стратегии.
+// @Tags         strategies
+// @Accept       json
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Param        id path int true "ID стратегии"
+// @Param        updateData body ds.UpdateStrategyRequest true "Данные для обновления"
+// @Success      200 {object} ds.StrategyDTO
+// @Failure      401 {object} map[string]string "Необходима авторизация"
+// @Failure      403 {object} map[string]string "Доступ запрещен"
+// @Router       /strategies/{id} [put]
 func (h *Handler) UpdateStrategy(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -105,6 +153,17 @@ func (h *Handler) UpdateStrategy(c *gin.Context) {
 }
 
 // DELETE /api/strategies/:id
+
+// DeleteStrategy godoc
+// @Summary      Удалить стратегию (модератор)
+// @Description  Удаляет стратегию из системы.
+// @Tags         strategies
+// @Security     ApiKeyAuth
+// @Param        id path int true "ID стратегии для удаления"
+// @Success      204 "No Content"
+// @Failure      401 {object} map[string]string "Необходима авторизация"
+// @Failure      403 {object} map[string]string "Доступ запрещен"
+// @Router       /strategies/{id} [delete]
 func (h *Handler) DeleteStrategy(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -119,6 +178,20 @@ func (h *Handler) DeleteStrategy(c *gin.Context) {
 }
 
 // POST /api/strategies/:id/image
+
+// UploadStrategyImage godoc
+// @Summary      Загрузить изображение для стратегии (модератор)
+// @Description  Загружает и привязывает изображение к стратегии.
+// @Tags         strategies
+// @Accept       multipart/form-data
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Param        id path int true "ID стратегии"
+// @Param        file formData file true "Файл изображения"
+// @Success      200 {object} map[string]string "URL загруженного изображения"
+// @Failure      401 {object} map[string]string "Необходима авторизация"
+// @Failure      403 {object} map[string]string "Доступ запрещен"
+// @Router       /strategies/{id}/image [post]
 func (h *Handler) UploadStrategyImage(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {

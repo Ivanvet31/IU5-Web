@@ -22,7 +22,7 @@ func main() {
 	err = db.AutoMigrate(
 		&ds.User{},
 		&ds.Strategy{},
-		&ds.Request{},
+		&ds.Recovery_request{},
 		&ds.RequestStrategy{},
 	)
 	if err != nil {

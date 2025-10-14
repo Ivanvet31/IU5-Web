@@ -1,73 +1,80 @@
 package handler
 
 import (
+	"RIP/internal/app/config"
+	"RIP/internal/app/redis"
 	"RIP/internal/app/repository"
 
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 )
 
-const hardcodedUserID = 1
-
 type Handler struct {
 	Repository *repository.Repository
+	Redis      *redis.Client
+	JWTConfig  *config.JWTConfig
 }
 
-func NewHandler(r *repository.Repository) *Handler {
+func NewHandler(r *repository.Repository, redis *redis.Client, jwtConfig *config.JWTConfig) *Handler {
 	return &Handler{
 		Repository: r,
+		Redis:      redis,
+		JWTConfig:  jwtConfig,
 	}
 }
 
 func (h *Handler) RegisterAPIRoutes(api *gin.RouterGroup) {
-	// --- Домен услуг (стратегий) ---
-	strategies := api.Group("/strategies")
-	{
-		strategies.GET("", h.GetStrategies)
-		strategies.GET("/:id", h.GetStrategy)
-		strategies.POST("", h.CreateStrategy)
-		strategies.PUT("/:id", h.UpdateStrategy)
-		strategies.DELETE("/:id", h.DeleteStrategy)
-		strategies.POST("/:id/image", h.UploadStrategyImage)
-	}
+	// --- Публичные эндпоинты (доступны всем) ---
+	api.POST("/users", h.Register)
+	api.POST("/auth/login", h.Login)
+	api.GET("/strategies", h.GetStrategies)
+	api.GET("/strategies/:id", h.GetStrategy)
 
-	// --- Домен заявок (requests) ---
-	requests := api.Group("/requests")
+	// --- Группа эндпоинтов, требующих авторизации ---
+	auth := api.Group("/")
+	auth.Use(h.AuthMiddleware)
 	{
-		// Общие роуты для заявок
-		requests.GET("/cart", h.GetCartBadge)
-		requests.GET("", h.ListRequests)
-		requests.POST("/draft/strategies/:strategy_id", h.AddStrategyToDraft)
+		// Пользователи
+		auth.POST("/auth/logout", h.Logout)
+		auth.GET("/users/me", h.GetMyUserData)
+		auth.PUT("/users/me", h.UpdateMyUserData)
 
-		// Группа для действий с конкретной заявкой по ее ID
-		requestByID := requests.Group("/:id")
+		// Заявки
+		requests := auth.Group("/recovery_requests")
 		{
-			requestByID.GET("", h.GetRequest)
-			requestByID.PUT("", h.UpdateRequestDetails)
-			requestByID.DELETE("", h.DeleteRequest)
-			requestByID.PUT("/form", h.FormRequest)
-			requestByID.PUT("/resolve", h.ResolveRequest)
+			requests.GET("/cart", h.GetCartBadge)
+			requests.GET("", h.ListRequests)
+			requests.POST("/draft/strategies/:strategy_id", h.AddStrategyToDraft)
 
-			// Группа для действий со стратегиями ВНУТРИ конкретной заявки
-			strategiesInRequest := requestByID.Group("/strategies/:strategy_id")
+			requestByID := requests.Group("/:id")
 			{
-				strategiesInRequest.PUT("", h.UpdateRequestStrategy)
-				strategiesInRequest.DELETE("", h.RemoveStrategyFromRequest)
+				requestByID.GET("", h.GetRequest)
+				requestByID.PUT("", h.UpdateRequestDetails)
+				requestByID.DELETE("", h.DeleteRequest)
+				requestByID.PUT("/form", h.FormRequest)
+
+				// М-М связи
+				strategiesInRequest := requestByID.Group("/strategies/:strategy_id")
+				{
+					strategiesInRequest.PUT("", h.UpdateRequestStrategy)
+					strategiesInRequest.DELETE("", h.RemoveStrategyFromRequest)
+				}
 			}
 		}
 	}
 
-	// --- Домен пользователей и аутентификации ---
-	users := api.Group("/users")
+	// --- Группа эндпоинтов, требующих прав модератора ---
+	moderator := api.Group("/")
+	moderator.Use(h.AuthMiddleware, h.ModeratorMiddleware)
 	{
-		users.POST("", h.Register)
-		users.GET("/me", h.GetMyUserData)
-		users.PUT("/me", h.UpdateMyUserData)
-	}
-	auth := api.Group("/auth")
-	{
-		auth.POST("/login", h.Login)
-		auth.POST("/logout", h.Logout)
+		// Управление услугами
+		moderator.POST("/strategies", h.CreateStrategy)
+		moderator.PUT("/strategies/:id", h.UpdateStrategy)
+		moderator.DELETE("/strategies/:id", h.DeleteStrategy)
+		moderator.POST("/strategies/:id/image", h.UploadStrategyImage)
+
+		// Управление заявками
+		moderator.PUT("/recovery_requests/:id/resolve", h.ResolveRequest)
 	}
 }
 

@@ -10,9 +10,9 @@ import (
 )
 
 // GetOrCreateDraftRequest находит или создает черновик заявки
-func (r *Repository) GetOrCreateDraftRequest(userID uint) (ds.Request, error) {
-	var request ds.Request
-	err := r.db.Where(ds.Request{UserID: userID, Status: "draft"}).Attrs(ds.Request{CreatedAt: time.Now()}).FirstOrCreate(&request).Error
+func (r *Repository) GetOrCreateDraftRequest(userID uint) (ds.Recovery_request, error) {
+	var request ds.Recovery_request
+	err := r.db.Where(ds.Recovery_request{UserID: userID, Status: "draft"}).Attrs(ds.Recovery_request{CreatedAt: time.Now()}).FirstOrCreate(&request).Error
 	return request, err
 }
 
@@ -36,18 +36,18 @@ func (r *Repository) AddStrategyToRequest(requestID, strategyID uint) error {
 }
 
 // GetRequestWithStrategies загружает заявку со связанными стратегиями, пользователями
-func (r *Repository) GetRequestWithStrategies(requestID uint) (ds.Request, error) {
-	var request ds.Request
+func (r *Repository) GetRequestWithStrategies(requestID uint) (ds.Recovery_request, error) {
+	var request ds.Recovery_request
 	err := r.db.Preload("Strategies").Preload("User").Preload("Moderator").First(&request, requestID).Error
 	if err == nil && request.Status == "deleted" {
-		return ds.Request{}, errors.New("request has been deleted")
+		return ds.Recovery_request{}, errors.New("request has been deleted")
 	}
 	return request, err
 }
 
 // LogicallyDeleteRequest удаляет заявку (только создатель, только черновик)
 func (r *Repository) LogicallyDeleteRequest(requestID uint, creatorID uint) error {
-	var request ds.Request
+	var request ds.Recovery_request
 	if err := r.db.First(&request, requestID).Error; err != nil {
 		return err
 	}
@@ -75,7 +75,7 @@ func (r *Repository) UpdateRequestDetails(requestID uint, req ds.UpdateRequestDe
 	if len(updates) == 0 {
 		return nil
 	}
-	return r.db.Model(&ds.Request{}).Where("id = ?", requestID).Updates(updates).Error
+	return r.db.Model(&ds.Recovery_request{}).Where("id = ?", requestID).Updates(updates).Error
 }
 
 // UpdateRequestStrategyData обновляет поле в связующей таблице
@@ -86,10 +86,14 @@ func (r *Repository) UpdateRequestStrategyData(requestID, strategyID uint, req d
 }
 
 // ListRequestsFiltered возвращает список заявок с фильтрами
-func (r *Repository) ListRequestsFiltered(status, from, to string) ([]ds.Request, error) {
-	var requests []ds.Request
+func (r *Repository) ListRequestsFiltered(userID uint, isModerator bool, status, from, to string) ([]ds.Recovery_request, error) {
+	var requests []ds.Recovery_request
 	query := r.db.Preload("User").Preload("Moderator")
 	query = query.Where("status != ? AND status != ?", "draft", "deleted")
+
+	if !isModerator {
+		query = query.Where("user_id = ?", userID)
+	}
 
 	if status != "" {
 		query = query.Where("status = ?", status)
@@ -113,7 +117,7 @@ func (r *Repository) ListRequestsFiltered(status, from, to string) ([]ds.Request
 
 // FormRequest меняет статус с 'draft' на 'formed'
 func (r *Repository) FormRequest(requestID, creatorID uint) error {
-	var request ds.Request
+	var request ds.Recovery_request
 	if err := r.db.First(&request, requestID).Error; err != nil {
 		return err
 	}
@@ -128,7 +132,7 @@ func (r *Repository) FormRequest(requestID, creatorID uint) error {
 
 // ResolveRequest меняет статус с 'formed' на 'completed' или 'rejected'
 func (r *Repository) ResolveRequest(requestID, moderatorID uint, action string) error {
-	var request ds.Request
+	var request ds.Recovery_request
 	if err := r.db.First(&request, requestID).Error; err != nil {
 		return err
 	}
@@ -153,7 +157,7 @@ func (r *Repository) ResolveRequest(requestID, moderatorID uint, action string) 
 
 // CalculateAndSaveRecoveryTime рассчитывает и сохраняет итоговое время
 func (r *Repository) CalculateAndSaveRecoveryTime(requestID uint) error {
-	var request ds.Request
+	var request ds.Recovery_request
 	if err := r.db.Preload("Strategies").First(&request, requestID).Error; err != nil {
 		return err
 	}

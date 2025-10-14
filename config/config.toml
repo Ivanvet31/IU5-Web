@@ -1,2 +1,12 @@
 ServiceHost = "0.0.0.0"
 ServicePort = 8080
+
+[JWT]
+Secret = ""
+ExpiresIn = "1h"
+
+[Redis]
+Host = "localhost"
+Port = 6379
+Password = "password"
+User = ""
