@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RecoveryTime - Стратегии восстановления</title>
+    <link rel="stylesheet" href="/resources/styles/style.css">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <a href="/" class="logo">REcovery<span class="logo--accent">Time</span></a>
+            <!-- Иконка корзины удалена из хедера -->
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="container">
+            <!-- Виджет "Текущая заявка" полностью удален -->
+            <section class="recovery-strategies">
+                <h1>Стратегии восстановления</h1>
+                <form action="/" method="GET" class="search-form">
+                    <input type="search" name="query" placeholder="Поиск" class="search-form__input" value="{{.searchQuery}}">
+                </form>
+                <div class="strategies-grid">
+                    {{range .strategies}}
+                    <div class="strategy-card">
+                        <img src="{{.ImageURL}}" alt="{{.Title}}" class="strategy-card__image">
+                        <h3 class="strategy-card__title">{{.Title}}</h3>
+                        <a href="/strategy/{{.ID}}" class="strategy-card__details-link">Подробнее →</a>
+                        <form action="/cart/add/{{.ID}}" method="POST">
+                            <button type="submit" class="strategy-card__link">Добавить в заявку</button>
+                        </form>
+                    </div>
+                    {{end}}
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- ИКОНКА КОРЗИНЫ ПЕРЕМЕЩЕНА СЮДА -->
+    {{if gt (len .cart.Strategies) 0}}
+        <a href="/cart" class="calculator-link" title="Перейти к заявке">
+    {{else}}
+        <a class="calculator-link disabled" title="Корзина пуста">
+    {{end}}
+        <div class="calculator-icon">
+            <span class="icon-layer"></span>
+            <span class="icon-layer"></span>
+            <span class="icon-layer"></span>
+        </div>
+        <span class="calculator-badge">{{len .cart.Strategies}}</span>
+    </a>
+</body>
+</html>

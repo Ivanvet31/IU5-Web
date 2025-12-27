@@ -1,0 +1,814 @@
+basePath: /api
+definitions:
+  ds.CartBadgeDTO:
+    properties:
+      count:
+        type: integer
+      request_id:
+        type: integer
+    type: object
+  ds.CreateStrategyRequest:
+    properties:
+      base_recovery_hours:
+        type: number
+      description:
+        type: string
+      title:
+        type: string
+    required:
+    - base_recovery_hours
+    - description
+    - title
+    type: object
+  ds.LoginResponse:
+    properties:
+      token:
+        type: string
+      user:
+        $ref: '#/definitions/ds.UserDTO'
+    type: object
+  ds.RequestDTO:
+    properties:
+      calculated_recovery_time_hours:
+        type: number
+      created_at:
+        type: string
+      creator_username:
+        type: string
+      documentation_quality:
+        type: string
+      id:
+        type: integer
+      it_skill_level:
+        type: string
+      moderator_username:
+        type: string
+      network_bandwidth_mbps:
+        type: integer
+      status:
+        type: string
+      strategies:
+        items:
+          $ref: '#/definitions/ds.StrategyDTO'
+        type: array
+    type: object
+  ds.ResolveRequest:
+    properties:
+      action:
+        description: '"complete" or "reject"'
+        type: string
+    required:
+    - action
+    type: object
+  ds.StrategyDTO:
+    properties:
+      base_recovery_hours:
+        type: number
+      description:
+        type: string
+      id:
+        type: integer
+      image_url:
+        type: string
+      title:
+        type: string
+    type: object
+  ds.UpdateRequestDetailsRequest:
+    properties:
+      documentation_quality:
+        type: string
+      it_skill_level:
+        type: string
+      network_bandwidth_mbps:
+        type: integer
+    type: object
+  ds.UpdateRequestStrategyRequest:
+    properties:
+      data_to_recover_gb:
+        type: integer
+    required:
+    - data_to_recover_gb
+    type: object
+  ds.UpdateStrategyRequest:
+    properties:
+      base_recovery_hours:
+        type: number
+      description:
+        type: string
+      title:
+        type: string
+    type: object
+  ds.UpdateUserRequest:
+    properties:
+      password:
+        type: string
+      username:
+        type: string
+    type: object
+  ds.UserDTO:
+    properties:
+      email:
+        type: string
+      id:
+        type: integer
+      is_moderator:
+        type: boolean
+      username:
+        type: string
+    type: object
+  ds.UserLoginRequest:
+    properties:
+      password:
+        type: string
+      username:
+        type: string
+    required:
+    - password
+    - username
+    type: object
+  ds.UserRegisterRequest:
+    properties:
+      password:
+        type: string
+      username:
+        type: string
+    required:
+    - password
+    - username
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: support@recovery-api.com
+    name: API Support
+  description: API-сервер для управления заявками и стратегиями восстановления данных.
+  title: API Системы восстановления
+  version: "1.0"
+paths:
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Получение JWT токена по логину и паролю для доступа к защищенным
+        эндпоинтам.
+      parameters:
+      - description: Учетные данные
+        in: body
+        name: credentials
+        required: true
+        schema:
+          $ref: '#/definitions/ds.UserLoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ds.LoginResponse'
+        "400":
+          description: Ошибка валидации
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Неверные учетные данные
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Аутентификация пользователя (гость)
+      tags:
+      - authorization
+  /auth/logout:
+    post:
+      description: Добавляет текущий JWT токен в черный список, делая его недействительным.
+      responses:
+        "200":
+          description: Сообщение об успехе
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Необходима авторизация
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Выход из системы (авторизованные пользователи)
+      tags:
+      - authorization
+  /recovery_requests:
+    get:
+      description: Возвращает список заявок. Для модератора - все, для пользователя
+        - только его.
+      parameters:
+      - description: Фильтр по статусу заявки (formed, completed, rejected)
+        in: query
+        name: status
+        type: string
+      - description: Фильтр по дате 'от' (формат YYYY-MM-DD)
+        in: query
+        name: from
+        type: string
+      - description: Фильтр по дате 'до' (формат YYYY-MM-DD)
+        in: query
+        name: to
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/ds.RequestDTO'
+            type: array
+        "401":
+          description: Необходима авторизация
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Получить список заявок (авторизованные пользователи)
+      tags:
+      - requests
+  /recovery_requests/{id}:
+    delete:
+      description: Логически удаляет заявку, переводя ее в статус "удалена". Доступно
+        только для создателя и только для черновиков.
+      parameters:
+      - description: ID заявки
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Необходима авторизация
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Доступ запрещен
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Удалить заявку (черновик) (авторизованные пользователи)
+      tags:
+      - requests
+    get:
+      description: Возвращает полную информацию о заявке, включая привязанные стратегии.
+      parameters:
+      - description: ID заявки
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ds.RequestDTO'
+        "401":
+          description: Необходима авторизация
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Заявка не найдена
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Получить одну заявку по ID (авторизованные пользователи)
+      tags:
+      - requests
+    put:
+      consumes:
+      - application/json
+      description: Позволяет пользователю обновить поля своей заявки (уровень навыков,
+        пропускная способность сети и т.д.).
+      parameters:
+      - description: ID заявки
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Данные для обновления
+        in: body
+        name: updateData
+        required: true
+        schema:
+          $ref: '#/definitions/ds.UpdateRequestDetailsRequest'
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Необходима авторизация
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Обновить детали заявки (авторизованные пользователи)
+      tags:
+      - requests
+  /recovery_requests/{id}/form:
+    put:
+      description: Переводит заявку из статуса "черновик" в "сформирована".
+      parameters:
+      - description: ID заявки (черновика)
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Необходима авторизация
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Доступ запрещен
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Сформировать заявку (авторизованные пользователи)
+      tags:
+      - requests
+  /recovery_requests/{id}/resolve:
+    put:
+      consumes:
+      - application/json
+      description: Модератор завершает (с расчетом) или отклоняет заявку.
+      parameters:
+      - description: ID заявки
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 'Действие: ''complete'' или ''reject'''
+        in: body
+        name: action
+        required: true
+        schema:
+          $ref: '#/definitions/ds.ResolveRequest'
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Необходима авторизация
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Доступ запрещен
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Завершить или отклонить заявку (модератор)
+      tags:
+      - requests
+  /recovery_requests/{id}/strategies/{strategy_id}:
+    delete:
+      description: Удаляет связь между заявкой и стратегией.
+      parameters:
+      - description: ID заявки
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: ID стратегии
+        in: path
+        name: strategy_id
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Необходима авторизация
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Удалить стратегию из заявки (авторизованные пользователи)
+      tags:
+      - m-m
+    put:
+      consumes:
+      - application/json
+      description: Изменяет дополнительные данные (например, объем данных) для конкретной
+        стратегии в рамках одной заявки.
+      parameters:
+      - description: ID заявки
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: ID стратегии
+        in: path
+        name: strategy_id
+        required: true
+        type: integer
+      - description: Новые данные
+        in: body
+        name: updateData
+        required: true
+        schema:
+          $ref: '#/definitions/ds.UpdateRequestStrategyRequest'
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Необходима авторизация
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Обновить данные стратегии в заявке (авторизованные пользователи)
+      tags:
+      - m-m
+  /recovery_requests/cart:
+    get:
+      description: Возвращает ID черновика текущего пользователя и количество стратегий
+        в нем.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ds.CartBadgeDTO'
+        "401":
+          description: Необходима авторизация
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Получить информацию для иконки корзины (авторизованные пользователи)
+      tags:
+      - requests
+  /recovery_requests/draft/strategies/{strategy_id}:
+    post:
+      description: Находит или создает черновик заявки для текущего пользователя и
+        добавляет в него стратегию.
+      parameters:
+      - description: ID стратегии для добавления
+        in: path
+        name: strategy_id
+        required: true
+        type: integer
+      responses:
+        "201":
+          description: Created
+        "401":
+          description: Необходима авторизация
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Добавить стратегию в черновик заявки (авторизованные пользователи)
+      tags:
+      - strategies
+  /strategies:
+    get:
+      description: Возвращает список всех активных стратегий с возможностью фильтрации
+        по названию.
+      parameters:
+      - description: Фильтр по названию стратегии
+        in: query
+        name: title
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/ds.StrategyDTO'
+            type: array
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Получить список стратегий (все)
+      tags:
+      - strategies
+    post:
+      consumes:
+      - application/json
+      description: Создает новую запись о стратегии восстановления. Доступно только
+        для модераторов.
+      parameters:
+      - description: Данные новой стратегии
+        in: body
+        name: strategy
+        required: true
+        schema:
+          $ref: '#/definitions/ds.CreateStrategyRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/ds.StrategyDTO'
+        "400":
+          description: Ошибка валидации
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Необходима авторизация
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Доступ запрещен (не модератор)
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Создать новую стратегию (модератор)
+      tags:
+      - strategies
+  /strategies/{id}:
+    delete:
+      description: Удаляет стратегию из системы.
+      parameters:
+      - description: ID стратегии для удаления
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Необходима авторизация
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Доступ запрещен
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Удалить стратегию (модератор)
+      tags:
+      - strategies
+    get:
+      description: Возвращает детальную информацию о конкретной стратегии.
+      parameters:
+      - description: ID стратегии
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ds.StrategyDTO'
+        "404":
+          description: Стратегия не найдена
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Получить одну стратегию по ID (все)
+      tags:
+      - strategies
+    put:
+      consumes:
+      - application/json
+      description: Обновляет информацию о существующей стратегии.
+      parameters:
+      - description: ID стратегии
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Данные для обновления
+        in: body
+        name: updateData
+        required: true
+        schema:
+          $ref: '#/definitions/ds.UpdateStrategyRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ds.StrategyDTO'
+        "401":
+          description: Необходима авторизация
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Доступ запрещен
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Обновить стратегию (модератор)
+      tags:
+      - strategies
+  /strategies/{id}/image:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Загружает и привязывает изображение к стратегии.
+      parameters:
+      - description: ID стратегии
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Файл изображения
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: URL загруженного изображения
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Необходима авторизация
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Доступ запрещен
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Загрузить изображение для стратегии (модератор)
+      tags:
+      - strategies
+  /users:
+    post:
+      consumes:
+      - application/json
+      description: Создает нового пользователя в системе. По умолчанию роль "пользователь",
+        не "модератор".
+      parameters:
+      - description: Данные для регистрации
+        in: body
+        name: credentials
+        required: true
+        schema:
+          $ref: '#/definitions/ds.UserRegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Пользователь успешно создан
+          schema:
+            $ref: '#/definitions/ds.UserDTO'
+        "400":
+          description: Ошибка валидации
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Регистрация нового пользователя (гость)
+      tags:
+      - authorization
+  /users/me:
+    get:
+      description: Возвращает информацию о пользователе, чей токен используется для
+        запроса.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ds.UserDTO'
+        "401":
+          description: Необходима авторизация
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Пользователь не найден
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Получить данные текущего пользователя (авторизованные пользователи)
+      tags:
+      - users
+    put:
+      consumes:
+      - application/json
+      description: Позволяет авторизованному пользователю обновить свой логин или
+        пароль.
+      parameters:
+      - description: Данные для обновления
+        in: body
+        name: updateData
+        required: true
+        schema:
+          $ref: '#/definitions/ds.UpdateUserRequest'
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Ошибка валидации
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Необходима авторизация
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Обновить данные текущего пользователя (авторизованные пользователи)
+      tags:
+      - users
+securityDefinitions:
+  ApiKeyAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

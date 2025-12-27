@@ -1,0 +1,240 @@
+/* Общие стили */
+body {
+    background-color: #F8F9FA;
+    color: #212529;
+    font-family: 'Inter', sans-serif;
+    margin: 0;
+    padding: 0;
+}
+
+/* Контейнер для центрирования контента */
+.container {
+    width: 90%;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* Стили для шапки */
+.header {
+    background-color: #FFFFFF;
+    border-bottom: 2px solid #E53935;
+    padding: 20px 0;
+}
+.header .container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.logo {
+    color: #212529;
+    text-decoration: none;
+    font-size: 32px;
+    font-weight: 600;
+}
+
+.logo--accent {
+    color: #E53935;
+}
+
+/* Основной контент */
+.main {
+    padding: 40px 0;
+}
+
+.recovery-strategies h1 {
+    font-size: 36px;
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+/* Стили для поиска */
+.search-form {
+    position: relative;
+    width: 350px;
+    margin: 0 auto 40px;
+}
+
+.search-form__input {
+    width: 100%;
+    padding: 12px 15px;
+    background-color: #FFFFFF;
+    border: 1px solid #CED4DA;
+    border-radius: 8px;
+    font-size: 16px;
+    box-sizing: border-box;
+}
+
+/* Стили для сетки карточек */
+.strategies-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+}
+
+/* Стили для отдельной карточки */
+.strategy-card {
+    background-color: #FFFFFF;
+    border: 1px solid #E0E0E0;
+    border-radius: 15px;
+    padding: 15px;
+    text-align: center;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.strategy-card__image {
+    width: 100%;
+    border-radius: 15px;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+}
+
+.strategy-card__title {
+    margin-top: 15px;
+    margin-bottom: 10px;
+    font-size: 20px;
+}
+
+.strategy-card__link {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 5px 0;
+    color: #E53935;
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 18px;
+    font-family: 'Inter', sans-serif;
+}
+.strategy-card__details-link {
+    color: #6c757d;
+    text-decoration: none;
+    font-size: 16px;
+    margin-bottom: 10px;
+}
+
+/* Стили для обертки контента на внутренних страницах */
+.content-card {
+    background-color: #FFFFFF;
+    padding: 40px;
+    border-radius: 8px;
+    border: 1px solid #E0E0E0;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+}
+
+/* Стили для страницы деталей */
+.strategy-details h2 {
+    font-size: 48px;
+    margin-top: 0;
+    margin-bottom: 30px;
+    text-align: center;
+}
+.details-content {
+    display: flex;
+    align-items: center;
+    gap: 40px;
+}
+.details-content__image {
+    flex: 1;
+    max-width: 50%;
+    height: auto;
+    border-radius: 15px;
+}
+.details-text-block {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+.details-content__text {
+    font-size: 20px;
+    line-height: 1.6;
+}
+
+/* Стили для формы калькулятора */
+.calculator-form {
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+}
+.form-row { display: flex; gap: 20px; }
+.form-group { display: flex; flex-direction: column; flex: 1; }
+.form-group label { margin-bottom: 8px; font-size: 14px; color: #6c757d; }
+.form-group input, .form-group select { background-color: #FFFFFF; border: 1px solid #CED4DA; border-radius: 8px; color: #212529; padding: 12px; font-size: 16px; font-family: 'Inter', sans-serif; }
+.form-group input:disabled { background-color: #e9ecef; }
+.strategy-block { background-color: #F8F9FA; border: 1px solid #E0E0E0; border-radius: 15px; padding: 20px; display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
+.strategy-info { display: flex; align-items: center; gap: 15px; flex-basis: 300px; flex-grow: 1; }
+.strategy-info img { width: 100px; height: auto; border-radius: 8px; }
+.strategy-title-group h4 { margin: 0 0 5px 0; font-size: 18px; }
+.strategy-title-group a { color: #E53935; text-decoration: none; font-size: 14px; }
+
+/* Стили для иконки корзины (НОВАЯ ВЕРСИЯ) */
+.calculator-link {
+    position: fixed; /* Плавающее позиционирование */
+    top: 100px;      /* Отступ от верха, ПОД хедером */
+    right: 40px;     /* Отступ справа */
+    z-index: 1000;   /* Поверх всего контента */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 60px;
+    height: 60px;
+    background-color: #FFFFFF;
+    border: 2px solid #E53935;
+    border-radius: 50%;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+    cursor: pointer;
+    transition: transform 0.2s ease-in-out;
+    text-decoration: none;
+}
+.calculator-link:hover { transform: scale(1.1); }
+.calculator-icon { position: relative; width: 30px; height: 30px; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+.icon-layer { display: block; width: 28px; height: 2px; background-color: #333; border: none; margin-bottom: 5px; }
+.icon-layer:last-child { margin-bottom: 0; }
+.calculator-badge { position: absolute; top: -5px; right: -8px; width: 24px; height: 24px; background-color: #E53935; color: #FFFFFF; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 14px; font-weight: bold; border: 2px solid #FFFFFF; }
+
+/* Стили для кнопки "Добавить в заявку" на странице описания */
+.add-to-cart-form { margin-top: 20px; }
+.add-to-cart-form button { background-color: #E53935; color: white; border: none; padding: 15px 30px; border-radius: 8px; cursor: pointer; font-size: 18px; font-weight: bold; transition: background-color 0.2s; }
+.add-to-cart-form button:hover { background-color: #c62828; }
+
+/* Стили для формы удаления и сохранения на странице корзины */
+.strategies-list-header { margin-top: 30px; margin-bottom: 10px; border-bottom: 1px solid #dee2e6; padding-bottom: 10px; }
+.form-actions { display: flex; justify-content: flex-end; margin-top: 20px; }
+.save-button { background-color: #E53935; color: white; border: none; padding: 15px 30px; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: bold; }
+.save-button:hover { background-color: #c62828; }
+.delete-form { margin-top: -55px; text-align: left; }
+.delete-button { background-color: #6c757d; color: white; border: none; padding: 15px 30px; border-radius: 8px; cursor: pointer; font-size: 16px; }
+.delete-button:hover { background-color: #5a6268; }
+
+/* Стиль для неактивной иконки корзины */
+.calculator-link.disabled {
+    pointer-events: none;
+    opacity: 0.6;
+    cursor: default;
+}
+
+/* Стиль для блока с результатом расчета */
+.result-display {
+    background-color: #2C2C2C;
+    color: #FFFFFF;
+    border-radius: 15px;
+    padding: 20px;
+    margin-top: 20px;
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.result-display h4 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 500;
+}
+.result-display span {
+    font-size: 24px;
+    font-weight: bold;
+}
