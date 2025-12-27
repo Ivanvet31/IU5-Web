@@ -10,18 +10,21 @@ type StrategyDTO struct {
 	Description       string  `json:"description"`
 	ImageURL          *string `json:"image_url"`
 	BaseRecoveryHours float64 `json:"base_recovery_hours"`
+	DataToRecoverGB   int     `json:"data_to_recover_gb,omitempty"` 
 }
 
 type CreateStrategyRequest struct {
 	Title             string  `json:"title" binding:"required"`
 	Description       string  `json:"description" binding:"required"`
 	BaseRecoveryHours float64 `json:"base_recovery_hours" binding:"required"`
+	ImageURL          *string `json:"image_url"`
 }
 
 type UpdateStrategyRequest struct {
 	Title             *string  `json:"title"`
 	Description       *string  `json:"description"`
 	BaseRecoveryHours *float64 `json:"base_recovery_hours"`
+	ImageURL          *string `json:"image_url"`
 }
 
 // --- Request DTOs ---
@@ -87,4 +90,23 @@ type LoginResponse struct {
 type UpdateUserRequest struct {
 	Username *string `json:"username"`
 	Password *string `json:"password"`
+}
+
+// --- Async Service DTOs (NEW) ---
+
+type AsyncCalculateRequest struct {
+	ID                   uint                `json:"id"`
+	ItSkillLevel         string              `json:"it_skill_level"`
+	NetworkBandwidthMbps int                 `json:"network_bandwidth_mbps"`
+	DocumentationQuality string              `json:"documentation_quality"`
+	Strategies           []AsyncStrategyData `json:"strategies"`
+}
+
+type AsyncStrategyData struct {
+	BaseRecoveryHours float64 `json:"base_recovery_hours"`
+	DataToRecoverGB   int     `json:"data_to_recover_gb"`
+}
+
+type AsyncCalculateResult struct {
+	CalculatedTime float64 `json:"calculated_time"`
 }

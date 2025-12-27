@@ -100,12 +100,18 @@ func (h *Handler) GetRequest(c *gin.Context) {
 
 	var strategyDTOs []ds.StrategyDTO
 	for _, s := range request.Strategies {
+		// --- НОВАЯ ЛОГИКА: Получаем объем данных из связующей таблицы ---
+		var assoc ds.RequestStrategy
+		// Ищем запись в request_strategies по ID заявки и ID стратегии
+		h.Repository.DB().Where("request_id = ? AND strategy_id = ?", request.ID, s.ID).First(&assoc)
+		
 		strategyDTOs = append(strategyDTOs, ds.StrategyDTO{
 			ID:                s.ID,
 			Title:             s.Title,
 			Description:       s.Description,
 			ImageURL:          s.ImageURL,
 			BaseRecoveryHours: s.BaseRecoveryHours,
+			DataToRecoverGB:   assoc.DataToRecoverGB, // Заполняем поле
 		})
 	}
 
@@ -252,7 +258,7 @@ func (h *Handler) FormRequest(c *gin.Context) {
 
 // ResolveRequest godoc
 // @Summary      Завершить или отклонить заявку (модератор)
-// @Description  Модератор завершает (с расчетом) или отклоняет заявку.
+// @Description  Модератор завершает (с расчетом) или отклоняет заявку. Расчет выполняется асинхронно в Python-сервисе.
 // @Tags         requests
 // @Accept       json
 // @Security     ApiKeyAuth
@@ -347,4 +353,45 @@ func (h *Handler) RemoveStrategyFromRequest(c *gin.Context) {
 		return
 	}
 	c.Status(http.StatusNoContent)
+}
+
+// SetRequestResult godoc
+// @Summary      Установить результат расчета (внутренний метод)
+// @Description  Принимает результат от асинхронного сервиса. Защищен секретным заголовком.
+// @Tags         internal
+// @Accept       json
+// @Produce      json
+// @Param        id path int true "ID заявки"
+// @Param        result body ds.AsyncCalculateResult true "Результат"
+// @Success      200 {string} string "OK"
+// @Router       /internal/requests/{id}/result [put]
+func (h *Handler) SetRequestResult(c *gin.Context) {
+	// 1. Псевдо-авторизация по ключу
+	secretKey := c.GetHeader("X-Internal-Secret")
+	if secretKey != "my_secret_8_byte_key" { // Тот же ключ, что в Python
+		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "Forbidden"})
+		return
+	}
+
+	// 2. Получение ID
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		h.errorHandler(c, http.StatusBadRequest, err)
+		return
+	}
+
+	// 3. Парсинг тела
+	var req ds.AsyncCalculateResult
+	if err := c.BindJSON(&req); err != nil {
+		h.errorHandler(c, http.StatusBadRequest, err)
+		return
+	}
+
+	// 4. Обновление в БД
+	if err := h.Repository.UpdateRecoveryTime(uint(id), req.CalculatedTime); err != nil {
+		h.errorHandler(c, http.StatusInternalServerError, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"status": "updated"})
 }

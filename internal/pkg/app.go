@@ -7,6 +7,7 @@ import (
 	"RIP/internal/app/handler"
 	"fmt"
 
+	"github.com/gin-contrib/cors" // <--- ИМПОРТ 1
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 
@@ -32,6 +33,19 @@ func NewApp(c *config.Config, r *gin.Engine, h *handler.Handler) *Application {
 
 func (a *Application) RunApp() {
 	logrus.Info("Server start up")
+
+	// --- НАСТРОЙКА CORS (НОВОЕ) ---
+	corsConfig := cors.DefaultConfig()
+	// Разрешаем все источники (для разработки с Tauri это удобнее всего)
+	corsConfig.AllowAllOrigins = true
+	// Разрешаем основные методы
+	corsConfig.AllowMethods = []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}
+	// Разрешаем заголовки, особенно Authorization (для JWT) и X-Internal-Secret
+	corsConfig.AllowHeaders = []string{"Origin", "Content-Length", "Content-Type", "Authorization", "X-Internal-Secret"}
+	
+	// Применяем middleware
+	a.Router.Use(cors.New(corsConfig))
+	// ------------------------------
 
 	a.Router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 

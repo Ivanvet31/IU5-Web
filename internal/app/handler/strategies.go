@@ -102,6 +102,7 @@ func (h *Handler) CreateStrategy(c *gin.Context) {
 		Description:       req.Description,
 		BaseRecoveryHours: req.BaseRecoveryHours,
 		Status:            "active",
+		ImageURL:          req.ImageURL, // Добавлено сохранение ImageURL
 	}
 
 	if err := h.Repository.CreateStrategy(strategy); err != nil {
@@ -112,6 +113,7 @@ func (h *Handler) CreateStrategy(c *gin.Context) {
 		ID:                strategy.ID,
 		Title:             strategy.Title,
 		Description:       strategy.Description,
+		ImageURL:          strategy.ImageURL,
 		BaseRecoveryHours: strategy.BaseRecoveryHours,
 	})
 }

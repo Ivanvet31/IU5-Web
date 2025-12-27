@@ -30,6 +30,13 @@ func (h *Handler) RegisterAPIRoutes(api *gin.RouterGroup) {
 	api.GET("/strategies", h.GetStrategies)
 	api.GET("/strategies/:id", h.GetStrategy)
 
+	// --- Внутренние эндпоинты (межсервисное взаимодействие) ---
+	// Не используют AuthMiddleware, но проверяют секретный заголовок внутри
+	internal := api.Group("/internal")
+	{
+		internal.PUT("/requests/:id/result", h.SetRequestResult)
+	}
+
 	// --- Группа эндпоинтов, требующих авторизации ---
 	auth := api.Group("/")
 	auth.Use(h.AuthMiddleware)

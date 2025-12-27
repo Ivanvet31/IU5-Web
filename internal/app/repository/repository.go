@@ -57,3 +57,7 @@ func New(dsn string) (*Repository, error) {
 		minioEndpoint: endpoint,
 	}, nil
 }
+
+func (r *Repository) DB() *gorm.DB {
+	return r.db
+}

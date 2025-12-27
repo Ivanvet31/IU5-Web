@@ -2,8 +2,11 @@ package repository
 
 import (
 	"RIP/internal/app/ds"
+	"bytes"
+	"encoding/json"
 	"errors"
-	"strings"
+	"fmt"
+	"net/http"
 	"time"
 
 	"gorm.io/gorm"
@@ -131,9 +134,11 @@ func (r *Repository) FormRequest(requestID, creatorID uint) error {
 }
 
 // ResolveRequest меняет статус с 'formed' на 'completed' или 'rejected'
+// И отправляет задачу в Python сервис при complete
 func (r *Repository) ResolveRequest(requestID, moderatorID uint, action string) error {
 	var request ds.Recovery_request
-	if err := r.db.First(&request, requestID).Error; err != nil {
+	// Загружаем заявку со стратегиями для формирования payload
+	if err := r.db.Preload("Strategies").First(&request, requestID).Error; err != nil {
 		return err
 	}
 	if request.Status != "formed" {
@@ -141,69 +146,73 @@ func (r *Repository) ResolveRequest(requestID, moderatorID uint, action string) 
 	}
 
 	updates := map[string]interface{}{"moderator_id": &moderatorID, "completed_at": time.Now()}
-	switch action {
-	case "complete":
+	
+	if action == "reject" {
+		updates["status"] = "rejected"
+		return r.db.Model(&request).Updates(updates).Error
+	} else if action == "complete" {
 		updates["status"] = "completed"
-		if err := r.CalculateAndSaveRecoveryTime(requestID); err != nil {
+		updates["calculated_recovery_time_hours"] = nil // Сбрасываем, пока не посчитает Python
+
+		// Сохраняем статус
+		if err := r.db.Model(&request).Updates(updates).Error; err != nil {
 			return err
 		}
-	case "reject":
-		updates["status"] = "rejected"
-	default:
+
+		// --- Подготовка данных для асинхронного сервиса ---
+		var strategiesData []ds.AsyncStrategyData
+		for _, strategy := range request.Strategies {
+			var assoc ds.RequestStrategy
+			// Получаем данные из M-M (объем данных)
+			r.db.Where("request_id = ? AND strategy_id = ?", requestID, strategy.ID).First(&assoc)
+
+			strategiesData = append(strategiesData, ds.AsyncStrategyData{
+				BaseRecoveryHours: strategy.BaseRecoveryHours,
+				DataToRecoverGB:   assoc.DataToRecoverGB,
+			})
+		}
+
+		payload := ds.AsyncCalculateRequest{
+			ID:                   request.ID,
+			ItSkillLevel:         "",
+			NetworkBandwidthMbps: 0,
+			DocumentationQuality: "",
+			Strategies:           strategiesData,
+		}
+		if request.ItSkillLevel != nil {
+			payload.ItSkillLevel = *request.ItSkillLevel
+		}
+		if request.NetworkBandwidthMbps != nil {
+			payload.NetworkBandwidthMbps = *request.NetworkBandwidthMbps
+		}
+		if request.DocumentationQuality != nil {
+			payload.DocumentationQuality = *request.DocumentationQuality
+		}
+
+		// --- Асинхронная отправка запроса ---
+		go func() {
+			jsonData, _ := json.Marshal(payload)
+			// Адрес Python сервиса на порту 8001
+			resp, err := http.Post("http://localhost:8001/calculate", "application/json", bytes.NewBuffer(jsonData))
+			if err != nil {
+				fmt.Printf("ERROR: Failed to send task to async service: %v\n", err)
+				return
+			}
+			defer resp.Body.Close()
+			fmt.Printf("Task sent to async service. Status: %s\n", resp.Status)
+		}()
+
+		return nil
+	} else {
 		return errors.New("invalid action: must be 'complete' or 'reject'")
 	}
-	return r.db.Model(&request).Updates(updates).Error
 }
 
-// CalculateAndSaveRecoveryTime рассчитывает и сохраняет итоговое время
-func (r *Repository) CalculateAndSaveRecoveryTime(requestID uint) error {
-	var request ds.Recovery_request
-	if err := r.db.Preload("Strategies").First(&request, requestID).Error; err != nil {
-		return err
-	}
-
-	var associations []ds.RequestStrategy
-	if err := r.db.Where("request_id = ?", requestID).Find(&associations).Error; err != nil {
-		return err
-	}
-
-	var totalBaseHours float64 = 0
-	var totalDataGB int = 0
-	for _, strategy := range request.Strategies {
-		totalBaseHours += strategy.BaseRecoveryHours
-	}
-	for _, assoc := range associations {
-		totalDataGB += assoc.DataToRecoverGB
-	}
-
-	var dataTransferHours float64 = 0
-	if request.NetworkBandwidthMbps != nil && *request.NetworkBandwidthMbps > 0 {
-		dataTransferHours = (float64(totalDataGB) * 8 * 1024) / (float64(*request.NetworkBandwidthMbps) * 3600)
-	}
-
-	skillMultiplier := 1.5
-	if request.ItSkillLevel != nil {
-		switch strings.ToLower(*request.ItSkillLevel) {
-		case "средний":
-			skillMultiplier = 1.0
-		case "эксперт":
-			skillMultiplier = 0.7
-		}
-	}
-
-	docMultiplier := 1.5
-	if request.DocumentationQuality != nil {
-		switch strings.ToLower(*request.DocumentationQuality) {
-		case "хорошая":
-			docMultiplier = 1.0
-		case "отличная":
-			docMultiplier = 0.8
-		}
-	}
-
-	finalTime := (totalBaseHours + dataTransferHours) * skillMultiplier * docMultiplier
-
-	return r.db.Model(&request).Update("calculated_recovery_time_hours", finalTime).Error
+// UpdateRecoveryTime обновляет рассчитанное время (вызывается асинхронным сервисом)
+func (r *Repository) UpdateRecoveryTime(requestID uint, timeVal float64) error {
+	return r.db.Model(&ds.Recovery_request{}).
+		Where("id = ?", requestID).
+		Update("calculated_recovery_time_hours", timeVal).Error
 }
 
 // RemoveStrategyFromRequest удаляет связь м-м
