@@ -20,7 +20,7 @@ import (
 func (h *Handler) GetCartBadge(c *gin.Context) {
 	userID, err := getUserIDFromContext(c)
 	if err != nil {
-		h.errorHandler(c, http.StatusUnauthorized, err)
+		c.JSON(http.StatusOK, ds.CartBadgeDTO{RequestID: nil, Count: 0})
 		return
 	}
 

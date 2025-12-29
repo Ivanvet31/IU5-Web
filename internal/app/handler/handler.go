@@ -29,6 +29,7 @@ func (h *Handler) RegisterAPIRoutes(api *gin.RouterGroup) {
 	api.POST("/auth/login", h.Login)
 	api.GET("/strategies", h.GetStrategies)
 	api.GET("/strategies/:id", h.GetStrategy)
+	api.GET("/cart", h.GetCartBadge)
 
 	// --- Внутренние эндпоинты (межсервисное взаимодействие) ---
 	// Не используют AuthMiddleware, но проверяют секретный заголовок внутри
@@ -49,7 +50,6 @@ func (h *Handler) RegisterAPIRoutes(api *gin.RouterGroup) {
 		// Заявки
 		requests := auth.Group("/recovery_requests")
 		{
-			requests.GET("/cart", h.GetCartBadge)
 			requests.GET("", h.ListRequests)
 			requests.POST("/draft/strategies/:strategy_id", h.AddStrategyToDraft)
 
